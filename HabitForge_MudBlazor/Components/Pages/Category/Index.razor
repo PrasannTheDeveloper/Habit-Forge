@@ -1,0 +1,212 @@
+﻿@page "/Category/Index"
+@using MudBlazor
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Services
+@using HabitForge_MudBlazor.Components.Pages.Category
+@using MudBlazor.Components
+
+@inject CategoryService CategoryService
+@inject NavbarAsHeaderService NavAsHeader
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<style>
+    /* Fixed td height for compact look */
+    .dense-table td {
+        padding: 4px 12px !important;
+        height: 40px !important;
+    }
+    .mud-table-cell {
+        padding: 4px 8px !important;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-2">
+
+    <MudGrid>
+        @* Form Section *@
+        <MudItem xs="12" md="4">
+            <EditForm Model="category" OnValidSubmit="HandleCategory">
+                <DataAnnotationsValidator />
+                <MudCard  Elevation="4" Class="mb-4 rounded-lg">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@(IsEditing ? "Update Category" : "New Category")</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                            <MudTextField Label="Category Name" 
+                                    @bind-Value="category.Name"
+                                    For="(() => category.Name)" 
+                                        Placeholder="e.g., Iron Discipline or Mindset"
+                                     HelperText="Name the area of your life you're shaping"
+                                    Variant="Variant.Outlined" 
+                                     Margin="Margin.Dense"
+                                     Class="small-placeholder" />
+
+                            <MudTextField Label="Description" 
+                                    @bind-Value="category.Description"
+                                      Lines="3" 
+                                     Placeholder="What kind of person does this category help you become?"
+                                      HelperText="Set the blueprint for your new identity"
+                                     Variant="Variant.Outlined" 
+                                     Class="mt-4 small-placeholder" 
+                                        Margin="Margin.Dense" />
+                                </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                                   Color="IsEditing ? Color.Secondary : Color.Primary" 
+                                   FullWidth="true" Size="Size.Small">
+                            @(IsEditing ? "Save Changes" : "Create Category")
+                        </MudButton>
+                        @if (IsEditing)
+                        {
+                            <MudButton OnClick="CancelEdit" Variant="Variant.Text" FullWidth="true" 
+                                       Class="mt-2" Size="Size.Small">Cancel</MudButton>
+                        }
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+        </MudItem>
+
+        @* Table Section with Sorting and Dense Styling *@
+        <MudItem xs="12" md="8">
+            <MudTable Items="@categories" Hover="true" Dense="true" 
+                      Breakpoint="Breakpoint.Sm" Elevation="4" 
+                      Class="rounded-lg mb-4 dense-table">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Category, object>(x => x.Name)">Name</MudTableSortLabel></MudTh>
+                    <MudTh>Description</MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<Category, object>(x => x.Habits?.Count ?? 0)">Habits</MudTableSortLabel></MudTh>
+                    <MudTh Style="text-align:right">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">
+                        <MudText Typo="Typo.body2" Style="font-weight:600;">@context.Name</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Description">
+                        <MudText Typo="Typo.caption" Class="text-truncate" Style="max-width: 250px; display: block;">
+                            @context.Description
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Habits">
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small" 
+                                 Variant="Variant.Text" OnClick="@(() => ShowHabits(context))">
+                            @((context.Habits?.Count ?? 0)) Habits
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Style="text-align:right">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" 
+                                       Size="Size.Small" OnClick="@(() => EditCategory(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" 
+                                       Size="Size.Small" OnClick="@(() => DeleteCategory(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info">No categories found.</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<Category> categories = new();
+    private Category category = new();
+    private bool IsEditing = false;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await NavAsHeader.SetNavAsHeaderProperties(
+            Icons.Material.Filled.Category,
+            "Category Management",
+            "Organize your habits by creating and managing categories."
+        );
+    }
+
+    private async Task LoadData()
+    {
+        categories = await CategoryService.GetAllCategoriesAsync(); 
+    }
+
+    private async Task HandleCategory()
+    {
+        bool exists = await CategoryService.CategoryExists(category.Name);
+        
+        if (!IsEditing && exists)
+        {
+            Snackbar.Add("A category with this name already exists!", Severity.Warning);
+            return;
+        }
+
+        if (IsEditing)
+        {
+            await CategoryService.UpdateCategoryAsync(category);
+            Snackbar.Add("Category Updated", Severity.Success);
+        }
+        else
+        {
+            await CategoryService.CreateCategoryAsync(category);
+            Snackbar.Add("Category Created", Severity.Success);
+        }
+
+        ResetForm();
+        await LoadData();
+    }
+
+    private void EditCategory(Category item)
+    {
+        category = new Category
+        {
+            CategoryId = item.CategoryId,
+            Name = item.Name,
+            Description = item.Description
+        };
+        IsEditing = true;
+    }
+
+    private async Task DeleteCategory(Category cat)
+    {
+        var parameters = new DialogParameters<MudMessageBox>();
+        parameters.Add(x => x.Title, "Warning");
+        parameters.Add(x => x.MarkupMessage, new Microsoft.AspNetCore.Components.MarkupString(
+            $"<p>Are you sure you want to delete the <b>{cat.Name}</b> category?</p><p>This cannot be undone.</p>"
+        ));
+        parameters.Add(x => x.YesText, "Delete");
+        parameters.Add(x => x.CancelText, "Cancel");
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+
+        var dialog = await DialogService.ShowAsync<MudMessageBox>("Warning", parameters, options);
+        var result = await dialog.Result;        
+        
+        if (result != null && !result.Canceled && result.Data is bool isConfirmed && isConfirmed)
+        {
+            await CategoryService.DeleteCategoryAsync(cat.CategoryId);
+            Snackbar.Add($"Category '{cat.Name}' deleted.", Severity.Error);
+            await LoadData();
+        }
+    }
+
+    private void ResetForm()
+    {
+        category = new Category();
+        IsEditing = false;
+    }
+
+    private void CancelEdit() => ResetForm();
+
+    private async Task ShowHabits(Category cat)
+    {
+        var parameters = new DialogParameters<HabitListDialog>
+        {
+            { x => x.Habits, cat.Habits ?? new List<Habit>() }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        await DialogService.ShowAsync<HabitListDialog>($"{cat.Name} Habits", parameters, options);
+    }
+}

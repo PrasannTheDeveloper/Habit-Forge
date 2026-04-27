@@ -1,0 +1,52 @@
+﻿@using MudBlazor
+@inject NavigationManager NavigationManager
+
+<MudNavMenu >
+    <div class="pa-4 d-flex align-center">
+        <MudImage Src="Images/Logo/Logo.png" Alt="Logo" Height="50" Class="me-2" />
+
+        <div>
+            <MudText Typo="Typo.h6" Class="gradient-text">
+                Habit Forge
+            </MudText>
+            <MudText Typo="Typo.body2" >Forge a better you</MudText>
+        </div>
+    </div>
+    <MudDivider Class="mb-2" />
+    
+
+    <MudNavGroup Title="Habits" Icon="@Icons.Material.Rounded.AutoGraph" Expanded="true">
+        <MudNavLink href="/Habits/Index" Icon="@Icons.Material.Rounded.DateRange" Match="NavLinkMatch.All">Weekly View</MudNavLink>
+        <MudNavLink href="/Habits/Create" Icon="@Icons.Material.Rounded.AddCircleOutline" Match="NavLinkMatch.All">Create New</MudNavLink>
+        <MudNavLink href="/Habits/AnalyseDashboard" Icon="@Icons.Material.Rounded.BarChart" Match="NavLinkMatch.All">Analyse</MudNavLink>
+        <MudNavLink href="/Habits/HeatMap" Icon="@Icons.Material.Rounded.CalendarViewMonth" Match="NavLinkMatch.All">HeatMap</MudNavLink>
+    </MudNavGroup>
+
+    <MudNavLink href="/Category/Index" Icon="@Icons.Material.Rounded.Category" Match="NavLinkMatch.All">
+        Categories
+    </MudNavLink>
+    <MudNavGroup Title="Growth Journal" Icon="@Icons.Material.Rounded.AutoStories" Expanded="true">
+        <MudNavLink href="/ProgressDiary/Index" Icon="@Icons.Material.Rounded.HistoryEdu" Match="NavLinkMatch.All">
+            Past Reflections
+        </MudNavLink>
+        <MudNavLink href="/ProgressDiary/Create" Icon="@Icons.Material.Rounded.EditNote" Match="NavLinkMatch.All">
+            Daily Log
+        </MudNavLink>
+        <MudNavLink href="/ProgressDiary/Analytics" Icon="@Icons.Material.Rounded.Insights" Match="NavLinkMatch.All">
+            Growth Insights
+        </MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="Task Manager" Icon="@Icons.Material.Rounded.Assignment" Expanded="true">
+        <MudNavLink href="/Todo/Index" Icon="@Icons.Material.Rounded.Checklist" Match="NavLinkMatch.All">
+            Your Tasks
+        </MudNavLink>
+        <MudNavLink href="/Todo/Create" Icon="@Icons.Material.Rounded.PlaylistAdd" Match="NavLinkMatch.All">
+            Create Task
+        </MudNavLink>
+    </MudNavGroup>
+</MudNavMenu>
+
+<style>
+    
+   
+</style>

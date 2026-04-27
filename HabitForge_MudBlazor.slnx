@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="HabitForge_MudBlazor/HabitForge_MudBlazor.csproj">
+    <Deploy />
+  </Project>
+</Solution>

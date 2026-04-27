@@ -1,0 +1,834 @@
+﻿@page "/ProgressDiary/Analytics"
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Services
+@using MudBlazor
+@inject ProgressDiaryService DiaryService
+@inject HabitService HabitService
+@inject NavigationManager NavManager
+@inject NavbarAsHeaderService NavAsHeader
+@inject ProgressDiaryAnalyticsService AnalyticsService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (!_diaries.Any())
+{
+    <MudAlert Severity="Severity.Info" Class="mt-4" Icon="@Icons.Material.Filled.AutoStories">
+        No diary entries found. Start writing to see your analytics!
+    </MudAlert>
+}
+else
+{
+    <MudPaper Elevation="4" Class="pa-4 mb-6 rounded-lg">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+
+            <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
+               
+                <MudButton OnClick='() => SetViewMode("monthly")'
+                           Variant="@(_viewMode == "monthly" ? Variant.Filled : Variant.Outlined)"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.CalendarMonth">
+                    Monthly
+                </MudButton>
+                <MudButton OnClick='() => SetViewMode("yearly")'
+                           Variant="@(_viewMode == "yearly" ? Variant.Filled : Variant.Outlined)"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.CalendarToday">
+                    Yearly
+                </MudButton>
+            </MudButtonGroup>
+
+            <MudDivider Vertical="true" FlexItem="true" />
+
+            <div>
+                <MudDatePicker Label="Reference Date"
+                               @bind-Date="CurrentReferenceDateNullable"
+                               PickerVariant="PickerVariant.Inline"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               DisableToolbar="true"
+                               Class="tiny-datepicker" />
+            </div>
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                               OnClick="NavigateBack"
+                               Size="Size.Small" Class="tiny-datepicker" />
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" Style="font-size:0.60rem;"
+                           Size="Size.Small" OnClick="GoToToday" Class="tiny-datepicker">
+                    @(_viewMode == "yearly" ? "This Year" : "Today")
+                </MudButton>
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                               OnClick="NavigateForward"
+                               Size="Size.Small" Class="tiny-datepicker" />
+            </MudStack>
+
+            @if (_viewMode == "monthly")
+            {
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small"
+                         Icon="@Icons.Material.Filled.CalendarMonth">
+                    @_referenceDate.ToString("MMMM yyyy")
+                </MudChip>
+            }
+            else if (_viewMode == "yearly")
+            {
+                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small"
+                         Icon="@Icons.Material.Filled.CalendarToday">
+                    @_referenceDate.Year.ToString()
+                </MudChip>
+            }
+
+            <MudSpacer />
+
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small"
+                     Icon="@Icons.Material.Filled.Article">
+                @_filtered.Count / @_diaries.Count entries
+            </MudChip>
+        </MudStack>
+    </MudPaper>
+
+    @if (_viewMode == "monthly")
+    {
+        <MudAlert Severity="Severity.Normal" Icon="@Icons.Material.Filled.CalendarMonth" Class="mb-4 rounded-lg">
+            <MudText Typo="Typo.body2">
+                Showing data for <b>@_referenceDate.ToString("MMMM yyyy")</b> —
+                @(_filtered.Any() ? $"{_filtered.Count} entries found." : "No entries written this month yet.")
+            </MudText>
+        </MudAlert>
+    }
+
+    @if (_viewMode == "yearly")
+    {
+        <MudAlert Severity="Severity.Normal" Icon="@Icons.Material.Filled.CalendarToday" Class="mb-4 rounded-lg">
+            <MudText Typo="Typo.body2">
+                Showing data for <b>@_referenceDate.Year</b> —
+                @(_filtered.Any()
+                    ? $"{_filtered.Count} entries across {_yearlyMonthsWithEntries} month(s)."
+                    : "No entries for this year yet.")
+            </MudText>
+        </MudAlert>
+    }
+
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg" Style="border-top: 4px solid var(--mud-palette-primary);">
+                <MudStack Spacing="1" AlignItems="AlignItems.Start">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.EditNote" Color="Color.Primary" Size="Size.Small" />
+                        <MudText Typo="Typo.caption" >Total Entries</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.h3" Color="Color.Primary"><b>@_filtered.Count</b></MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Tertiary">diary logs recorded</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg" Style="border-top: 4px solid var(--mud-palette-success);">
+                <MudStack Spacing="1" AlignItems="AlignItems.Start">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Success" Size="Size.Small" />
+                        <MudText Typo="Typo.caption" >Avg Productivity</MudText>
+                    </MudStack>
+                    <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                        <MudText Typo="Typo.h3" Color="Color.Success"><b>@_avgProductivity.ToString("F1")</b></MudText>
+                        <MudText Typo="Typo.body1" >/10</MudText>
+                    </MudStack>
+                    <MudRating ReadOnly="true" SelectedValue="@((int)Math.Round(_avgProductivity / 2))" MaxValue="5" Size="Size.Small" Color="Color.Success" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg" Style="border-top: 4px solid var(--mud-palette-warning);">
+                <MudStack Spacing="1" AlignItems="AlignItems.Start">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEmotions" Color="Color.Warning" Size="Size.Small" />
+                        <MudText Typo="Typo.caption" >Top Mood</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.h5" Color="Color.Warning"><b>@_topMood</b></MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Tertiary">Most recorded mood</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg" Style="border-top: 4px solid var(--mud-palette-info);">
+                <MudStack Spacing="1" AlignItems="AlignItems.Start">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment" Color="Color.Info" Size="Size.Small" />
+                        <MudText Typo="Typo.caption" >Writing Streak</MudText>
+                    </MudStack>
+                    <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                        <MudText Typo="Typo.h3" Color="Color.Info"><b>@_writingStreak</b></MudText>
+                        <MudText Typo="Typo.body1" >days</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption" Color="Color.Tertiary">Current consecutive streak</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @if (_viewMode == "yearly")
+    {
+        <MudPaper Elevation="3" Class="pa-5 rounded-lg mb-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.ViewModule" Color="Color.Primary" />
+                <MudText Typo="Typo.h6"><b>Monthly Overview — @_referenceDate.Year</b></MudText>
+            </MudStack>
+            @{
+                var activeMonths = _yearlyMonthStats.Where(m => m.EntryCount > 0).ToList();
+            }
+            @if (!activeMonths.Any())
+            {
+                <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.EventBusy" Class="rounded-lg">
+                    No entries found for <b>@_referenceDate.Year</b>. Start writing to see your monthly breakdown!
+                </MudAlert>
+            }
+            else
+            {
+                <MudGrid Spacing="2">
+                    @foreach (var ms in activeMonths)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudPaper Outlined="true" Class="pa-3 rounded-lg">
+                                <MudStack Spacing="1">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.subtitle2"><b>@ms.MonthName</b></MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled">
+                                            @ms.EntryCount entries
+                                        </MudChip>
+                                    </MudStack>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.Speed" Size="Size.Small" Color="Color.Success" />
+                                        <MudText Typo="Typo.caption">Avg Productivity:</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Success"><b>@ms.AvgProductivity.ToString("F1")/10</b></MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.EmojiEmotions" Size="Size.Small" Color="Color.Warning" />
+                                        <MudText Typo="Typo.caption">Top Mood:</MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">@ms.TopMood</MudChip>
+                                    </MudStack>
+                                    <MudProgressLinear Value="@(ms.AvgProductivity * 10)"
+                                                       Color="Color.Success" Rounded="true"
+                                                       Style="height:6px;" Class="mt-1" />
+                                </MudStack>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudPaper>
+    }
+
+    @if (_viewMode == "monthly")
+    {
+        <MudPaper Elevation="3" Class="pa-5 rounded-lg mb-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.DateRange" Color="Color.Info" />
+                <MudText Typo="Typo.h6"><b>Week-by-Week Breakdown — @_referenceDate.ToString("MMMM yyyy")</b></MudText>
+            </MudStack>
+            @if (!_filtered.Any())
+            {
+                <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.EventBusy" Class="rounded-lg">
+                    No entries for <b>@_referenceDate.ToString("MMMM yyyy")</b>. Nothing to break down yet!
+                </MudAlert>
+            }
+            else
+            {
+                <MudTable Items="@_weeklyStats" Dense="true" Hover="true" Elevation="0" Striped="true">
+                    <HeaderContent>
+                        <MudTh>Week</MudTh>
+                        <MudTh>Date Range</MudTh>
+                        <MudTh>Entries</MudTh>
+                        <MudTh>Avg Productivity</MudTh>
+                        <MudTh>Top Mood</MudTh>
+                        <MudTh>Score Progress</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled">Week @context.WeekNumber</MudChip></MudTd>
+                        <MudTd><MudText Typo="Typo.body2">@context.RangeLabel</MudText></MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(context.EntryCount > 0 ? Color.Info : Color.Default)"
+                                     Variant="Variant.Outlined">
+                                @context.EntryCount
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>
+                            @if (context.EntryCount > 0)
+                            {
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudText Typo="Typo.body2" Color="Color.Success"><b>@context.AvgProductivity.ToString("F1")</b></MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">/10</MudText>
+                                </MudStack>
+                            }
+                            else { <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText> }
+                        </MudTd>
+                        <MudTd>
+                            @if (!string.IsNullOrEmpty(context.TopMood))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">@context.TopMood</MudChip>
+                            }
+                            else { <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText> }
+                        </MudTd>
+                        <MudTd>
+                            @if (context.EntryCount > 0)
+                            {
+                                <MudProgressLinear Value="@(context.AvgProductivity * 10)"
+                                                   Color="Color.Success" Rounded="true"
+                                                   Style="height:8px; min-width:100px;" />
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    }
+
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg" Style="height:420px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6"><b>Productivity Score Over Time</b></MudText>
+                </MudStack>
+                @if (!_filtered.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.ShowChart" Class="mt-4 rounded-lg">
+                        No data available for the selected period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Line"
+                              ChartSeries="@_productivitySeries" ChartLabels="@_productivityLabels"
+                              Width="100%" Height="320px" ChartOptions="@_lineOptions"
+                              LegendPosition="Position.Bottom" />
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg" Style="height:420px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEmotions" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h6"><b>Mood Distribution</b></MudText>
+                </MudStack>
+                @if (!_filtered.Any() || !_moodLabels.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.EmojiEmotions" Class="mt-4 rounded-lg">
+                        No mood data available for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Donut"
+                              ChartSeries="_moodChart" ChartLabels="@_moodLabels"
+                              Width="100%" Height="320px" LegendPosition="Position.Bottom" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg" Style="height:400px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarViewWeek" Color="Color.Info" />
+                    <MudText Typo="Typo.h6"><b>Avg Productivity by Day of Week</b></MudText>
+                </MudStack>
+                @if (!_filtered.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.CalendarViewWeek" Class="mt-4 rounded-lg">
+                        No data available to show day-of-week breakdown.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Bar"
+                              ChartSeries="@_dayOfWeekSeries" ChartLabels="@_dayLabels"
+                              Width="100%" Height="300px" ChartOptions="@_barOptions"
+                              LegendPosition="Position.Bottom" />
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg" Style="height:400px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Psychology" Color="Color.Warning" />
+                    <MudText Typo="Typo.h6"><b>Avg Productivity per Mood</b></MudText>
+                </MudStack>
+                @if (!_filtered.Any() || !_moodProductivityLabels.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Psychology" Class="mt-4 rounded-lg">
+                        No mood-productivity data available for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Bar"
+                              ChartSeries="@_moodProductivitySeries" ChartLabels="@_moodProductivityLabels"
+                              Width="100%" Height="300px" ChartOptions="@_barOptions"
+                              LegendPosition="Position.Bottom" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Tag" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6"><b>Top Tags</b></MudText>
+                </MudStack>
+                @if (!_tagFrequency.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Tag" Class="rounded-lg">
+                        No tags found in entries for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudStack Spacing="2">
+                        @foreach (var (tag, count) in _tagFrequency.Take(10))
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
+                                         Style="min-width:80px; justify-content:center;">@tag</MudChip>
+                                <MudProgressLinear Value="@((double)count / _tagFrequency.First().Count * 100)"
+                                                   Color="Color.Primary" Rounded="true" Style="flex:1; height:10px;" />
+                                <MudText Typo="Typo.body2" Style="min-width:28px; text-align:right;"><b>@count</b></MudText>
+                            </MudStack>
+                        }
+                    </MudStack>
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Link" Color="Color.Success" />
+                    <MudText Typo="Typo.h6"><b>Most Referenced Habits</b></MudText>
+                </MudStack>
+                @if (!_habitLinkFrequency.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Link" Class="rounded-lg">
+                        No habits linked in diary entries for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@_habitLinkFrequency.Take(7)" Dense="true" Hover="true" Elevation="0" Striped="true" FixedHeader="true">
+                        <HeaderContent>
+                            <MudTh><MudText Typo="Typo.subtitle2">Habit</MudText></MudTh>
+                            <MudTh><MudText Typo="Typo.subtitle2">Times Referenced</MudText></MudTh>
+                            <MudTh><MudText Typo="Typo.subtitle2">Avg Score</MudText></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd><MudText Typo="Typo.body2"><b>@context.HabitName</b></MudText></MudTd>
+                            <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Filled">@context.Count</MudChip></MudTd>
+                            <MudTd>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudRating ReadOnly="true" SelectedValue="@((int)Math.Round(context.AvgScore / 2))"
+                                               MaxValue="5" Size="Size.Small" Color="Color.Warning" />
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@context.AvgScore.ToString("F1")/10</MudText>
+                                </MudStack>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" md="7">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg" Style="height:400px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">
+                        <b>
+                            @if (_viewMode == "monthly") { <span>Daily Entry Activity — @_referenceDate.ToString("MMMM yyyy")</span> }
+                            else if (_viewMode == "yearly") { <span>Monthly Entry Activity — @_referenceDate.Year</span> }
+                            else { <span>Monthly Entry Activity</span> }
+                        </b>
+                    </MudText>
+                </MudStack>
+                @if (!_filtered.Any() || !_monthlyCountSeries.Any() || !_monthlyCountSeries[0].Data.Any(v => v > 0))
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.BarChart" Class="mt-4 rounded-lg">
+                        No activity data available for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Bar"
+                              ChartSeries="@_monthlyCountSeries" ChartLabels="@_monthlyLabels"
+                              Width="100%" Height="300px" ChartOptions="@_monthlyBarOptions"
+                              LegendPosition="Position.Bottom" />
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg" Style="height:400px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Warning" />
+                    <MudText Typo="Typo.h6"><b>Entry Completeness</b></MudText>
+                </MudStack>
+                @if (!_filtered.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.EmojiEvents" Class="mt-4 rounded-lg">
+                        No entries to measure completeness for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudStack Spacing="4" Class="mt-2">
+                        <div>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                <MudText Typo="Typo.body2">🏆 Win of the Day filled</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Success"><b>@_winFillRate%</b></MudText>
+                            </MudStack>
+                            <MudProgressLinear Value="@_winFillRate" Color="Color.Success" Rounded="true" Size="Size.Large" />
+                        </div>
+                        <div>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                <MudText Typo="Typo.body2">⚡ Challenge of Day filled</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Warning"><b>@_challengeFillRate%</b></MudText>
+                            </MudStack>
+                            <MudProgressLinear Value="@_challengeFillRate" Color="Color.Warning" Rounded="true" Size="Size.Large" />
+                        </div>
+                        <div>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                <MudText Typo="Typo.body2">🔗 Related Habits linked</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Info"><b>@_habitLinkRate%</b></MudText>
+                            </MudStack>
+                            <MudProgressLinear Value="@_habitLinkRate" Color="Color.Info" Rounded="true" Size="Size.Large" />
+                        </div>
+                        <div>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mb-1">
+                                <MudText Typo="Typo.body2">🏷️ Tags added</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Primary"><b>@_tagFillRate%</b></MudText>
+                            </MudStack>
+                            <MudProgressLinear Value="@_tagFillRate" Color="Color.Primary" Rounded="true" Size="Size.Large" />
+                        </div>
+                    </MudStack>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.ThumbUp" Color="Color.Success" />
+                    <MudText Typo="Typo.h6" Color="Color.Success"><b>Top 5 Best Days</b></MudText>
+                </MudStack>
+                @if (!_topDays.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.ThumbUp" Class="rounded-lg">
+                        No entries found for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@_topDays" Dense="true" Hover="true" Elevation="0" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Date</MudTh><MudTh>Title</MudTh><MudTh>Mood</MudTh><MudTh>Score</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd><MudText Typo="Typo.body2">@context.CreatedAt.ToString("MMM dd, yyyy")</MudText></MudTd>
+                            <MudTd><MudText Typo="Typo.body2" Style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">@context.Title</MudText></MudTd>
+                            <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">@context.Mood</MudChip></MudTd>
+                            <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined"><b>@context.ProductivityScore</b>/10</MudChip></MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.ThumbDown" Color="Color.Error" />
+                    <MudText Typo="Typo.h6" Color="Color.Error"><b>5 Toughest Days</b></MudText>
+                </MudStack>
+                @if (!_bottomDays.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.ThumbDown" Class="rounded-lg">
+                        No entries found for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="@_bottomDays" Dense="true" Hover="true" Elevation="0" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Date</MudTh><MudTh>Title</MudTh><MudTh>Mood</MudTh><MudTh>Score</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd><MudText Typo="Typo.body2">@context.CreatedAt.ToString("MMM dd, yyyy")</MudText></MudTd>
+                            <MudTd><MudText Typo="Typo.body2" Style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">@context.Title</MudText></MudTd>
+                            <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled">@context.Mood</MudChip></MudTd>
+                            <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined"><b>@context.ProductivityScore</b>/10</MudChip></MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Class="pa-5 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.BubbleChart" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6"><b>Mood Energy Breakdown</b></MudText>
+                </MudStack>
+                @if (!_filtered.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.BubbleChart" Class="rounded-lg">
+                        No mood data available for this period.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudGrid Spacing="3">
+                        @foreach (var group in _moodGroups)
+                        {
+                            var groupMoods = group.Moods
+                                .Select(m => (Mood: m, Count: _filtered.Count(d => d.Mood == m)))
+                                .Where(x => x.Count > 0)
+                                .ToList();
+                            @if (groupMoods.Any())
+                            {
+                                <MudItem xs="12" sm="6" md="3">
+                                    <MudPaper Outlined="true" Class="pa-4 rounded-lg">
+                                        <MudText Typo="Typo.subtitle1" Class="mb-3"><b>@group.Label</b></MudText>
+                                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                                            @foreach (var (mood, count) in groupMoods)
+                                            {
+                                                <MudBadge Content="@count.ToString()" Color="@group.MudColor" Overlap="true">
+                                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled"
+                                                             Color="@group.MudColor">@mood.ToString()</MudChip>
+                                                </MudBadge>
+                                            }
+                                        </MudStack>
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                        }
+                    </MudGrid>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+</MudContainer>
+
+<style>
+    .tiny-datepicker .mud-input-slot {
+        font-size: 0.75rem !important;
+        padding: 4px 8px !important;
+    }
+    .tiny-datepicker .mud-input-control {
+        margin-top: 0px !important;
+    }
+</style>
+
+@code {
+    private List<ProgressDiary> _diaries  = new();
+    private List<ProgressDiary> _filtered = new();
+    private bool _loading = true;
+
+    private string   _viewMode      = "custom";
+    private DateTime _referenceDate = DateTime.Today;
+
+    private double _avgProductivity;
+    private string _topMood        = "—";
+    private int    _writingStreak;
+    private double _winFillRate;
+    private double _challengeFillRate;
+    private double _habitLinkRate;
+    private double _tagFillRate;
+
+    private List<ChartSeries<double>> _productivitySeries  = new();
+    private string[]                  _productivityLabels  = Array.Empty<string>();
+    private string[]                  _moodLabels          = Array.Empty<string>();
+    private List<ChartSeries<double>> _moodChart           = new();
+    private List<ChartSeries<double>> _dayOfWeekSeries     = new();
+    private string[]                  _dayLabels           = { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" };
+    private List<ChartSeries<double>> _moodProductivitySeries = new();
+    private string[]                  _moodProductivityLabels = Array.Empty<string>();
+    private List<ChartSeries<double>> _monthlyCountSeries  = new();
+    private string[]                  _monthlyLabels       = Array.Empty<string>();
+
+    private List<(string Tag, int Count)>                          _tagFrequency       = new();
+    private List<ProgressDiaryAnalyticsService.HabitLinkStat>     _habitLinkFrequency = new();
+    private List<ProgressDiary>                                    _topDays            = new();
+    private List<ProgressDiary>                                    _bottomDays         = new();
+    private List<ProgressDiaryAnalyticsService.WeeklyStat>        _weeklyStats        = new();
+    private List<ProgressDiaryAnalyticsService.MonthStat>         _yearlyMonthStats   = new();
+
+    private int _yearlyMonthsWithEntries => _yearlyMonthStats.Count(m => m.EntryCount > 0);
+
+    private LineChartOptions _lineOptions = new LineChartOptions
+    {
+        YAxisTicks = 2, YAxisFormat = "F1", ShowLegend = true,
+        ChartPalette = new[] { "#594AE2", "#1EC8A0" }
+    };
+    private BarChartOptions _barOptions = new BarChartOptions
+    {
+        YAxisTicks = 1, YAxisFormat = "F1", ShowLegend = true,
+        ChartPalette = new[] { "#594AE2", "#FF4081", "#1EC8A0", "#FF9800", "#00BCD4", "#E040FB" }
+    };
+    private BarChartOptions _monthlyBarOptions = new BarChartOptions
+    {
+        YAxisTicks = 1, YAxisFormat = "F0", ShowLegend = true,
+        ChartPalette = new[] { "#594AE2", "#FF4081", "#1EC8A0", "#FF9800" }
+    };
+
+    private record MoodGroup(string Label, Moods[] Moods, Color MudColor, string Color);
+    private List<MoodGroup> _moodGroups = new()
+    {
+        new MoodGroup("⚡ High Energy",
+            new[] { Moods.Excited, Moods.Motivated, Moods.Inspired, Moods.Focused, Moods.Productive },
+            Color.Success, "color:var(--mud-palette-success)"),
+        new MoodGroup("😌 Calm & Balanced",
+            new[] { Moods.Happy, Moods.Calm, Moods.Grateful, Moods.Reflective, Moods.Confident, Moods.Neutral },
+            Color.Info, "color:var(--mud-palette-info)"),
+        new MoodGroup("😓 Low Energy",
+            new[] { Moods.Tired, Moods.Distracted, Moods.BurntOut },
+            Color.Warning, "color:var(--mud-palette-warning)"),
+        new MoodGroup("😰 Negative",
+            new[] { Moods.Sad, Moods.Anxious, Moods.Stressed, Moods.Frustrated },
+            Color.Error, "color:var(--mud-palette-error)")
+    };
+
+    private DateTime? CurrentReferenceDateNullable
+    {
+        get => _referenceDate;
+        set
+        {
+            if (value.HasValue)
+            {
+                _referenceDate = value.Value;
+                RefreshAll();
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _diaries  = await DiaryService.GetAllProgressDiariesAsync();
+        _filtered = _diaries.ToList();
+        RefreshAll();
+        _loading = false;
+        await UpdateHeader();
+    }
+
+    protected override async Task OnParametersSetAsync() => await UpdateHeader();
+
+    private void SetViewMode(string mode)
+    {
+        _viewMode      = mode;
+        _referenceDate = DateTime.Today;
+        RefreshAll();
+        _ = UpdateHeader();
+    }
+
+    private void NavigateBack()
+    {
+        _referenceDate = _viewMode switch
+        {
+            "monthly" => _referenceDate.AddMonths(-1),
+            "yearly"  => _referenceDate.AddYears(-1),
+            _         => _referenceDate.AddDays(-7)
+        };
+        RefreshAll();
+        _ = UpdateHeader();
+    }
+
+    private void NavigateForward()
+    {
+        _referenceDate = _viewMode switch
+        {
+            "monthly" => _referenceDate.AddMonths(1),
+            "yearly"  => _referenceDate.AddYears(1),
+            _         => _referenceDate.AddDays(7)
+        };
+        RefreshAll();
+        _ = UpdateHeader();
+    }
+
+    private void GoToToday()
+    {
+        _referenceDate = DateTime.Today;
+        RefreshAll();
+        _ = UpdateHeader();
+    }
+
+    private void RefreshAll()
+    {
+        _filtered = AnalyticsService.ApplyViewFilter(_diaries, _viewMode, _referenceDate);
+
+        _avgProductivity    = AnalyticsService.GetAvgProductivity(_filtered);
+        _topMood            = AnalyticsService.GetTopMood(_filtered);
+        _writingStreak      = AnalyticsService.GetWritingStreak(_diaries);
+        _winFillRate        = AnalyticsService.GetWinFillRate(_filtered);
+        _challengeFillRate  = AnalyticsService.GetChallengeFillRate(_filtered);
+        _habitLinkRate      = AnalyticsService.GetHabitLinkRate(_filtered);
+        _tagFillRate        = AnalyticsService.GetTagFillRate(_filtered);
+
+        var prodLine = AnalyticsService.BuildProductivityLine(_filtered);
+        _productivityLabels = prodLine.Labels;
+        _productivitySeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Productivity Score", Data = prodLine.Data }
+        };
+
+        var moodDonut = AnalyticsService.BuildMoodDonut(_filtered);
+        _moodLabels = moodDonut.Labels;
+        _moodChart  = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Mood Distributions", Data = moodDonut.Data }
+        };
+
+        _dayOfWeekSeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Avg Score", Data = AnalyticsService.BuildDayOfWeekAverages(_filtered) }
+        };
+
+        var moodProd = AnalyticsService.BuildMoodProductivity(_filtered);
+        _moodProductivityLabels = moodProd.Labels;
+        _moodProductivitySeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Avg Productivity", Data = moodProd.Data }
+        };
+
+        var activity = AnalyticsService.BuildActivityBar(_filtered, _viewMode, _referenceDate);
+        _monthlyLabels     = activity.Labels;
+        _monthlyCountSeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Entries", Data = activity.Data }
+        };
+
+        _tagFrequency       = AnalyticsService.BuildTagFrequency(_filtered);
+        _habitLinkFrequency = AnalyticsService.BuildHabitLinkStats(_filtered);
+        _topDays            = AnalyticsService.GetTopDays(_filtered);
+        _bottomDays         = AnalyticsService.GetBottomDays(_filtered);
+
+        if (_viewMode == "monthly")
+            _weeklyStats = AnalyticsService.BuildWeeklyStats(_filtered, _referenceDate);
+        else if (_viewMode == "yearly")
+            _yearlyMonthStats = AnalyticsService.BuildYearlyMonthStats(_diaries, _referenceDate);
+
+        StateHasChanged();
+    }
+
+    private Task UpdateHeader() =>
+        NavAsHeader.SetNavAsHeaderProperties(
+            Icons.Material.Filled.AutoStories,
+            "Progress Diary Analytics",
+            AnalyticsService.GetSubtitle(_viewMode, _referenceDate));
+}

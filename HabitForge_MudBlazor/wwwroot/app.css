@@ -1,0 +1,79 @@
+/* Remove default margin/padding and let MudBlazor handle fonts */
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Ensure the app takes full height */
+#app {
+    height: 100%;
+}
+
+/* Container for the label and select */
+.custom-select-wrapper {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+/* Mimics MudBlazor's floating label style */
+.custom-label {
+    font-size: 0.75rem;
+    color: var(--mud-palette-text-secondary);
+    margin-bottom: 4px;
+    margin-left: 4px;
+}
+
+/* The actual select box */
+.forge-select {
+    background-color: transparent;
+    color: var(--mud-palette-text-primary);
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: 4px;
+    padding: 12px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+    /* Changes border color on hover/focus to match MudBlazor */
+    .forge-select:focus {
+        border: 2px solid var(--mud-palette-primary);
+        padding: 11px; /* Adjust for border width change */
+    }
+
+    /* This is the magic for Dark Mode options */
+    .forge-select option {
+        background-color: var(--mud-palette-surface);
+        color: var(--mud-palette-text-primary);
+    }
+
+::placeholder {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+/* Specific MudBlazor target if the above is too broad */
+.small-placeholder .mud-input-slot::placeholder {
+    font-size: 0.85rem !important;
+}
+.gradient-text {
+    font-weight: 700;
+    background: linear-gradient( 90deg, #45AEDE, #259295, #378DD8, #38ACA4 );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* smooth gradient rendering */
+    background-size: 200% auto;
+    font-weight :bolder;
+}
+
+/* DARK THEME → white outline */
+.mud-theme-dark .gradient-text {
+    -webkit-text-stroke: 1px white;
+}
+
+/* LIGHT THEME → black outline */
+.mud-theme-light .gradient-text {
+    -webkit-text-stroke: 1px black;
+}

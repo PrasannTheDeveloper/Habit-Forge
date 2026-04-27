@@ -1,0 +1,786 @@
+﻿@page "/Habits/AnalyseDashboard"
+@using HabitForge_MudBlazor.Services
+@using HabitForge_MudBlazor.Models
+@using MudBlazor
+@using MudBlazor.Charts
+@inject HabitService HabitService
+@inject Habits_AnalyseChartData_Service ChartService
+@inject NavbarAsHeaderService NavAsHeader
+@code{
+    protected override async Task OnParametersSetAsync()
+    {
+        await NavAsHeader.SetNavAsHeaderProperties(@Icons.Material.Rounded.BarChart, "Habit Analysis Dashboard", "Track progress, measure consistency, and discover insights from your habits.");
+    }
+}
+
+
+@* ════════════════════════════════════════════════════════
+   TOP CONTROL BAR
+   ════════════════════════════════════════════════════════ *@
+<MudPaper Elevation="3" Class="pa-3 mb-5 rounded-3">
+    <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="3">
+
+        @* Date Navigation *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2"> 
+            <MudDatePicker Label="@(YealyAnalysis ? "Select Year" : "Select Month")"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Date="selectedDate"
+                           DateChanged="@(YealyAnalysis ? GetYearlyCompletionData : GetMonthlyDays)"
+                           DateFormat="@(YealyAnalysis ? "yyyy" : "MMM yyyy")" />
+
+            <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary">
+                <MudButton StartIcon="@Icons.Material.Filled.ChevronLeft" OnClick="PreviousWeek">Prev</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Today" OnClick="CurrentWeek">Today</MudButton>
+                <MudButton EndIcon="@Icons.Material.Filled.ChevronRight" OnClick="NextWeek">Next</MudButton>
+            </MudButtonGroup>
+        </MudStack>
+
+        @* Mode & Chart Toggles *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudToggleGroup T="bool" Value="YealyAnalysis" ValueChanged="OnPeriodToggleChanged"
+                            SelectionMode="SelectionMode.SingleSelection" Color="Color.Primary" CheckMark="false" Outlined="true">
+                <MudToggleItem Value="false" Text="Monthly" />
+                <MudToggleItem Value="true" Text="Yearly" />
+            </MudToggleGroup>
+
+
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+
+@* ════════════════════════════════════════════════════════
+   STAT SUMMARY CARDS
+   ════════════════════════════════════════════════════════ *@
+<MudGrid Spacing="3" Class="mb-5">
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-lg" Style="border-top: 4px solid var(--mud-palette-primary);">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.caption" >Avg Completion</MudText>
+                        <MudText Typo="Typo.h5">@AverageCompletionRate.ToString("0.0")%</MudText>
+                        <MudText Typo="Typo.caption" Color="@(AverageCompletionRate >= 70 ? Color.Success : AverageCompletionRate >= 40 ? Color.Warning : Color.Error)">
+                            @(AverageCompletionRate >= 70 ? "On fire 🔥" : AverageCompletionRate >= 40 ? "Keep going 💪" : "Needs attention ⚠️")
+                        </MudText>
+                    </div>
+                    <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                    </MudAvatar>
+                </MudStack>
+                <MudProgressLinear Value="@AverageCompletionRate" Color="Color.Primary" Rounded="true" Class="mt-3" />
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-lg" Style="border-top: 4px solid var(--mud-palette-success);">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.caption">Best Habit</MudText>
+                        <MudText Typo="Typo.h6" Style="max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@BestHabitName</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Success">@BestHabitRate.ToString("0.0")% rate</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Success" Variant="Variant.Filled" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" />
+                    </MudAvatar>
+                </MudStack>
+                <MudProgressLinear Value="@BestHabitRate" Color="Color.Success" Rounded="true" Class="mt-3" />
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-lg" Style="border-top: 4px solid var(--mud-palette-error);">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.caption" >Needs Work</MudText>
+                        <MudText Typo="Typo.h6" Style="max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@WorstHabitName</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Error">@WorstHabitRate.ToString("0.0")% rate</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Error" Variant="Variant.Filled" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingDown" />
+                    </MudAvatar>
+                </MudStack>
+                <MudProgressLinear Value="@WorstHabitRate" Color="Color.Error" Rounded="true" Class="mt-3" />
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-lg" Style="border-top: 4px solid var(--mud-palette-info);">
+            <MudCardContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <div>
+                        <MudText Typo="Typo.caption" >Total Habits</MudText>
+                        <MudText Typo="Typo.h5">@TotalHabits</MudText>
+                        <MudText Typo="Typo.caption" >@ActiveHabits active · @InactiveHabits inactive</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Tertiary" Variant="Variant.Filled" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.FormatListBulleted" />
+                    </MudAvatar>
+                </MudStack>
+                <MudProgressLinear Value="@((double)ActiveHabits / (TotalHabits > 0 ? TotalHabits : 1) * 100)"
+                                   Color="Color.Tertiary" Rounded="true" Class="mt-3" />
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+     
+</MudGrid>
+
+
+@* ════════════════════════════════════════════════════════
+   MAIN CHARTS ROW
+   ════════════════════════════════════════════════════════ *@
+<MudGrid Spacing="3" Class="mb-5">
+
+    @* Trend Chart *@
+    <MudItem xs="12" md="8">
+        <MudCard Elevation="3" Class="rounded-3" Style="height:100%;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.ShowChart" Color="Color.Info" />
+                        <MudText Typo="Typo.h6">
+                            @(YealyAnalysis ? $"Yearly Trend — {selectedDate.Year}" : $"Daily Trend — {selectedDate:MMMM yyyy}")
+                        </MudText>
+                    </MudStack>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudTooltip Text="@(isLineChart ? "Switch to Bar Chart" : "Switch to Line Chart")">
+                        <MudButton StartIcon="@(isLineChart ? Icons.Material.Filled.BarChart : Icons.Material.Filled.ShowChart)"
+                                   OnClick="@(() => isLineChart = !isLineChart)"
+                                   Variant="Variant.Filled" Color="Color.Info" Size="Size.Small">
+                            @(isLineChart ? "Bar" : "Line")
+                        </MudButton>
+                    </MudTooltip>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                @{
+                    var trendData = YealyAnalysis ? Yearly_CompletionRateChart : Monthly_CompletionRateChart;
+                    var trendEmpty = !trendData.Any() || trendData.All(s => s.Data == null || s.Data.All(v => v == 0));
+                }
+                @if (trendEmpty)
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:320px;" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Typo="Typo.body1">No trend data available for this period.</MudText>
+                        <MudText Typo="Typo.caption" >Complete some habits to see your progress here.</MudText>
+                    </MudStack>
+                }
+                else
+                {
+                    <MudChart T="double"
+                              ChartType="@(isLineChart ? ChartType.Line : ChartType.Bar)"
+                              ChartSeries="trendData"
+                              Width="100%"
+                              Height="320px"
+                              ChartLabels="@(YealyAnalysis ? YearlyCompletionRateLabels : MonthlyBarChartLabels)"
+                              ChartOptions="@trendChartOptions" >
+                    </MudChart>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    @* Distribution Chart *@
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="3" Class="rounded-3" Style="height:100%;" >
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.PieChart" Color="Color.Secondary" />
+                        <MudText Typo="Typo.h6">Per-Habit Distribution</MudText>
+                    </MudStack>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudTooltip Text="@(isPieChart ? "Switch to Radar Chart" : "Switch to Pie Chart")">
+                        <MudButton StartIcon="@(isPieChart ? Icons.Material.Filled.Radar : Icons.Material.Filled.PieChart)"
+                                   OnClick="@(() => isPieChart = !isPieChart)"
+                                   Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small">
+                            @(isPieChart ? "Radar" : "Pie")
+                        </MudButton>
+                    </MudTooltip>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                @{
+                    var distData = YealyAnalysis ? PieChartDataYearly : PieChartDataMonthly;
+                    var distEmpty = !distData.Any() || AssociatedHabits.Length == 0 || AssociatedHabits.All(v => v == 0);
+                }
+                @if (distEmpty)
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:320px;" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.PieChart" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Typo="Typo.body1" ">No habit data to distribute yet.</MudText>
+                        <MudText Typo="Typo.caption">Track your habits to see the breakdown here.</MudText>
+                    </MudStack>
+                }
+                else
+                {
+                    <MudChart T="double"
+                              ChartType="@(isPieChart ? ChartType.Donut : ChartType.Radar)"
+                              ChartSeries="distData"
+                              ChartLabels="AssociatedHabitsLabels"
+                              Width="100%" 
+                              Height="320px" />
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+</MudGrid>
+
+
+@* ════════════════════════════════════════════════════════
+   LIFETIME PERFORMANCE SUMMARY
+   ════════════════════════════════════════════════════════ *@
+
+<MudPaper Elevation="4" Class="rounded-4">
+    <MudStack AlignItems="AlignItems.Stretch" Class="md-4 w-100">
+    <MudAlert Severity="Severity.Normal"
+              Variant="Variant.Text"
+              Icon="@Icons.Material.Filled.FactCheck"
+              Class="mud-width-full">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.subtitle1">
+                <b>Lifetime Achievement & Consistency</b>  Total performance data since you started tracking
+            </MudText>
+        </MudStack>
+    </MudAlert>
+</MudStack>
+</MudPaper>
+
+@* ════════════════════════════════════════════════════════
+   HABITS LEADERBOARD + STREAK RANKINGS ROW
+   ════════════════════════════════════════════════════════ *@
+<MudGrid Spacing="3" Class="mb-5">
+
+    @* Habits Leaderboard Table *@
+    <MudItem xs="12" md="7">
+        <MudCard Elevation="3" Class="rounded-3" Style="height:100%; display:flex; flex-direction:column;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Leaderboard" Color="Color.Warning" />
+                        <MudText Typo="Typo.h6">Habits Leaderboard</MudText>
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Class="pa-0" Style="overflow-y:auto; flex:1;">
+                @if (!LeaderboardRows.Any())
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pa-6" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Leaderboard" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Typo="Typo.body1" >No leaderboard data yet.</MudText>
+                        <MudText Typo="Typo.caption" >Complete habits this period to build the rankings.</MudText>
+                    </MudStack>
+                }
+                else
+                {
+                <MudTable Items="@LeaderboardRows" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm"
+                          SortLabel="Sort" Elevation="3">
+                    <HeaderContent>
+                        <MudTh>#</MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<LeaderboardItem, object>(x => x.Name)">Habit</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<LeaderboardItem, object>(x => x.CompletionRate)">Rate</MudTableSortLabel></MudTh>
+                        <MudTh>Progress</MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<LeaderboardItem, object>(x => x.Streak)">Streak</MudTableSortLabel></MudTh>
+                        <MudTh>Rank</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            @if (context.Position == 1)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Warning" Size="Size.Small" />
+                            }
+                            else if (context.Position == 2)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Default" Size="Size.Small" />
+                            }
+                            else if (context.Position == 3)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Error" Size="Size.Small" />
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" >@context.Position</MudText>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudText Typo="Typo.body2">@context.Name</MudText>
+                            @if (!context.IsActive)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">Inactive</MudChip>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudText Typo="Typo.body2" Color="@RateColor(context.CompletionRate)">
+                                @context.CompletionRate.ToString("0.0")%
+                            </MudText>
+                        </MudTd>
+                        <MudTd Style="min-width:100px;">
+                            <MudProgressLinear Value="@context.CompletionRate"
+                                               Color="@RateColor(context.CompletionRate)"
+                                               Rounded="true" Size="Size.Small" />
+                        </MudTd>
+                        <MudTd>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment"
+                                         Color="@(context.Streak >= 7 ? Color.Error : Color.Default)"
+                                         Size="Size.Small" />
+                                <MudText Typo="Typo.body2">@context.Streak</MudText>
+                            </MudStack>
+                        </MudTd>
+                        <MudTd>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudImage Src="@($"/Images/Ranking_Images/{context.CurrentRank}.png")"
+                                          Width="16" Height="16"
+                                          ObjectFit="ObjectFit.Contain" />
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@RankChipColor(context.CurrentRank)"
+                                         Variant="Variant.Filled">
+                                    @context.CurrentRank
+                                </MudChip>
+                            </MudStack>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    @* Streak Rankings *@
+    <MudItem xs="12" md="5">
+        <MudCard Elevation="3" Class="rounded-3" Style="height:100%; display:flex; flex-direction:column;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment" Color="Color.Error" />
+                        <MudText Typo="Typo.h6">Streak Hall of Fame</MudText>
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Class="pa-0" Style="overflow-y:auto; flex:1;">
+                @if (!TopStreakHabits.Any())
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pa-6" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment" Size="Size.Large"  />
+                        <MudText Typo="Typo.body1" >No streak data yet.</MudText>
+                    </MudStack>
+                }
+                else
+                {
+                    <MudTable Items="@TopStreakHabits" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm"
+                              SortLabel="Sort" Elevation="3">
+                        <HeaderContent>
+                            <MudTh>Habit</MudTh>
+                            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<LeaderboardItem, object>(x => x.Streak)">Streak</MudTableSortLabel></MudTh>
+                            <MudTh><MudTableSortLabel SortBy="new Func<LeaderboardItem, object>(x => x.BestStreak)">Best</MudTableSortLabel></MudTh>
+                            <MudTh>Progress</MudTh>
+                            <MudTh>Rank</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <MudText Typo="Typo.body2">@context.Name</MudText>
+                            </MudTd>
+                            <MudTd>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment"
+                                             Color="@(context.Streak >= 30 ? Color.Error : context.Streak >= 7 ? Color.Warning : Color.Default)"
+                                             Size="Size.Small" />
+                                    <MudText Typo="Typo.body2">@context.Streak</MudText>
+                                </MudStack>
+                            </MudTd>
+                            <MudTd>
+                                <MudText Typo="Typo.caption" >@context.BestStreak d</MudText>
+                            </MudTd>
+                            <MudTd Style="min-width:90px;">
+                                <MudProgressLinear Value="@((double)context.Streak / (context.BestStreak > 0 ? context.BestStreak : 1) * 100)"
+                                                   Color="@(context.Streak >= context.BestStreak ? Color.Error : Color.Warning)"
+                                                   Rounded="true" Size="Size.Small" />
+                            </MudTd>
+                            <MudTd>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudImage Src="@($"/Images/Ranking_Images/{context.CurrentRank}.png")"
+                                              Width="16" Height="16"
+                                              ObjectFit="ObjectFit.Contain" />
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@RankChipColor(context.CurrentRank)"
+                                             Variant="Variant.Filled">
+                                        @context.CurrentRank
+                                    </MudChip>
+                                </MudStack>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+</MudGrid>
+
+
+@* ════════════════════════════════════════════════════════
+   CONSISTENCY ROW
+   ════════════════════════════════════════════════════════ *@
+<MudGrid Spacing="3" Class="mb-5">
+
+    <MudItem xs="12">
+        <MudCard Elevation="3" Class="rounded-3">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Tertiary" />
+                        <MudText Typo="Typo.h6">Consistency Rate per Habit</MudText>
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (!AllHabits.Any(h => h.IsActive))
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pa-6" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Typo="Typo.body1" >No active habits to display consistency for.</MudText>
+                        <MudText Typo="Typo.caption" >Activate or add habits to see your consistency rates.</MudText>
+                    </MudStack>
+                }
+                else
+                {
+                <MudGrid Spacing="3">
+                    @foreach (var habit in AllHabits.Where(h => h.IsActive).OrderByDescending(h => h.ConsistencyRate))
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudStack Spacing="1">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2" Style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@habit.Name</MudText>
+                                    <MudText Typo="Typo.body2" Color="@RateColor(habit.ConsistencyRate)">
+                                        @habit.ConsistencyRate.ToString("0.0")%
+                                    </MudText>
+                                </MudStack>
+                                <MudProgressLinear Value="@habit.ConsistencyRate"
+                                                   Color="@RateColor(habit.ConsistencyRate)"
+                                                   Rounded="true" Size="Size.Medium" />
+                                <MudText Typo="Typo.caption" >
+                                    @habit.TotalRequiredDays req. days · @habit.TotalMissedDays missed
+                                </MudText>
+                            </MudStack>
+                        </MudItem>
+                    }
+                </MudGrid>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+</MudGrid>
+
+
+@* ════════════════════════════════════════════════════════
+   HABIT TYPE BREAKDOWN
+   ════════════════════════════════════════════════════════ *@
+<MudGrid Spacing="3" Class="mb-5">
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-3">
+            <MudCardContent>
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckBox" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h5">@AllHabits.Count(h => h.HabitType == TypeOfHabit.Checkbox)</MudText>
+                    <MudText Typo="Typo.caption" >Checkbox Habits</MudText>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-3">
+            <MudCardContent>
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Numbers" Size="Size.Large" Color="Color.Success" />
+                    <MudText Typo="Typo.h5">@AllHabits.Count(h => h.HabitType == TypeOfHabit.Numeric)</MudText>
+                    <MudText Typo="Typo.caption" >Numeric Habits</MudText>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-3">
+            <MudCardContent>
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Large" Color="Color.Warning" />
+                    <MudText Typo="Typo.h5">@AllHabits.Count(h => h.HabitType == TypeOfHabit.Hours)</MudText>
+                    <MudText Typo="Typo.caption" >Hours Habits</MudText>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="3" Class="rounded-3">
+            <MudCardContent>
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Percent" Size="Size.Large"  />
+                    <MudText Typo="Typo.h5">@AllHabits.Count(h => h.HabitType == TypeOfHabit.Percent || h.HabitType == TypeOfHabit.List)</MudText>
+                    <MudText Typo="Typo.caption" >Percent / List Habits</MudText>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+</MudGrid>
+
+
+@code {
+
+    // ─── State ─────────────────────────────────────────────────────────────────
+    private DateTime selectedDate = DateTime.Today;
+    private bool YealyAnalysis = false;
+    private bool isLineChart = true;
+    private bool isPieChart = true;
+
+    // ─── Habits ────────────────────────────────────────────────────────────────
+    private List<Habit> AllHabits = new();
+    private int TotalHabits => AllHabits.Count;
+    private int ActiveHabits => AllHabits.Count(h => h.IsActive);
+    private int InactiveHabits => AllHabits.Count(h => !h.IsActive);
+
+    // ─── Summary stats ─────────────────────────────────────────────────────────
+    private double AverageCompletionRate => CurrentHabitRates.Values.Any()
+        ? Math.Round(CurrentHabitRates.Values.Average(), 1) : 0;
+
+    private string BestHabitName => CurrentHabitRates.Any()
+        ? CurrentHabitRates.OrderByDescending(x => x.Value).First().Key : "—";
+    private double BestHabitRate => CurrentHabitRates.Any()
+        ? CurrentHabitRates.Values.Max() : 0;
+
+    private string WorstHabitName => CurrentHabitRates.Any()
+        ? CurrentHabitRates.OrderBy(x => x.Value).First().Key : "—";
+    private double WorstHabitRate => CurrentHabitRates.Any()
+        ? CurrentHabitRates.Values.Min() : 0;
+
+    // ─── Leaderboard ───────────────────────────────────────────────────────────
+    private Dictionary<string, double> CurrentHabitRates = new();
+    private List<LeaderboardItem> LeaderboardRows = new();
+
+    private List<LeaderboardItem> TopStreakHabits => AllHabits
+        .OrderByDescending(h => h.CurrentStreak)
+        .Take(5)
+        .Select(h => new LeaderboardItem
+        {
+            Name = h.Name,
+            Streak = h.CurrentStreak,
+            BestStreak = h.BestStreak,
+            CurrentRank = h.CurrentRank ?? "Dormant"
+        })
+        .ToList();
+
+    // ─── Chart Data ────────────────────────────────────────────────────────────
+    private List<DateTime> MonthlyDays = new();
+    private List<ChartSeries<double>> Monthly_CompletionRateChart = new();
+    private string[] MonthlyBarChartLabels => MonthlyDays.Select(d => d.ToString("dd")).ToArray();
+
+    private List<ChartSeries<double>> Yearly_CompletionRateChart = new();
+    private double[] YearlyCompletionRate = new double[12];
+    private string[] YearlyCompletionRateLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+    private List<ChartSeries<double>> PieChartDataMonthly = new();
+    private List<ChartSeries<double>> PieChartDataYearly = new();
+    private double[] AssociatedHabits = Array.Empty<double>();
+    private string[] AssociatedHabitsLabels = Array.Empty<string>();
+
+    private ChartOptions trendChartOptions = new ChartOptions
+    {
+
+    };
+
+
+
+    // ─── Lifecycle ─────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        AllHabits = await HabitService.GetAllHabitAsync();
+        await RefreshAll();
+    }
+
+    private async Task RefreshAll()
+    {
+        await GetMonthlyDays(selectedDate);
+        await GetYearlyCompletionData(selectedDate);
+        await GetMonthlyHabitCompletionRate(selectedDate);
+        await GetYearlyHabitCompletionRate(selectedDate);
+        BuildLeaderboard();
+    }
+
+    // ─── Navigation ────────────────────────────────────────────────────────────
+    private async Task NextWeek()
+    {
+        selectedDate = YealyAnalysis ? selectedDate.AddYears(1) : selectedDate.AddMonths(1);
+        await RefreshCurrent();
+    }
+
+    private async Task PreviousWeek()
+    {
+        selectedDate = YealyAnalysis ? selectedDate.AddYears(-1) : selectedDate.AddMonths(-1);
+        await RefreshCurrent();
+    }
+
+    private async Task CurrentWeek()
+    {
+        selectedDate = DateTime.Today;
+        await RefreshCurrent();
+    }
+
+    private async Task RefreshCurrent()
+    {
+        if (YealyAnalysis)
+        {
+            await GetYearlyCompletionData(selectedDate);
+            await GetYearlyHabitCompletionRate(selectedDate);
+        }
+        else
+        {
+            await GetMonthlyDays(selectedDate);
+            await GetMonthlyHabitCompletionRate(selectedDate);
+        }
+        BuildLeaderboard();
+    }
+
+    private async Task OnPeriodToggleChanged(bool yearly)
+    {
+        YealyAnalysis = yearly;
+        await RefreshCurrent();
+    }
+
+    // ─── Chart Methods ─────────────────────────────────────────────────────────
+    private async Task GetMonthlyDays(DateTime? date)
+    {
+        MonthlyDays.Clear();
+        selectedDate = date ?? DateTime.Today;
+        var start = new DateTime(selectedDate.Year, selectedDate.Month, 1);
+        var end = start.AddMonths(1).AddDays(-1);
+        var data = await ChartService.GetSingleDayAnalyseHabit(start, end);
+        var daysInMonth = DateTime.DaysInMonth(selectedDate.Year, selectedDate.Month);
+        var completionRate = new List<double>();
+
+        for (int i = 0; i < daysInMonth; i++)
+        {
+            var current = start.AddDays(i);
+            MonthlyDays.Add(current);
+            completionRate.Add(data.TryGetValue(current.Date, out var rate) ? rate : 0);
+        }
+
+        Monthly_CompletionRateChart = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Overall Completion %", Data = completionRate.ToArray() }
+        };
+        StateHasChanged();
+    }
+
+    private async Task GetYearlyCompletionData(DateTime? date)
+    {
+        Yearly_CompletionRateChart.Clear();
+        var year = (date ?? DateTime.Today).Year;
+        var data = await ChartService.GetSingleDayAnalyseHabit(new DateTime(year, 1, 1), new DateTime(year, 12, 31));
+
+        for (int month = 1; month <= 12; month++)
+        {
+            var daysInMonth = DateTime.DaysInMonth(year, month);
+            var monthData = data.Where(x => x.Key.Month == month).Select(x => x.Value);
+            YearlyCompletionRate[month - 1] = monthData.Any() ? monthData.Sum() / daysInMonth : 0;
+        }
+
+        Yearly_CompletionRateChart = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Monthly Avg Completion %", Data = YearlyCompletionRate.ToArray() }
+        };
+    }
+
+    private async Task GetMonthlyHabitCompletionRate(DateTime? date)
+    {
+        var data = await ChartService.GetAllHabitsMontlyCompletionRate(date ?? DateTime.Today);
+        CurrentHabitRates = data;
+        AssociatedHabits = data.Values.ToArray();
+        AssociatedHabitsLabels = data.Keys.ToArray();
+        PieChartDataMonthly = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Habit Completion %", Data = AssociatedHabits.ToArray() }
+        };
+    }
+
+    private async Task GetYearlyHabitCompletionRate(DateTime? date)
+    {
+        var data = await ChartService.GetAllHabitsYearlyCompletionRate(date ?? DateTime.Today);
+        if (YealyAnalysis) CurrentHabitRates = data;
+        AssociatedHabits = data.Values.ToArray();
+        AssociatedHabitsLabels = data.Keys.ToArray();
+        PieChartDataYearly = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double> { Name = "Habit Completion %", Data = AssociatedHabits.ToArray() }
+        };
+    }
+
+    // ─── Leaderboard Builder ───────────────────────────────────────────────────
+    private void BuildLeaderboard()
+    {
+        LeaderboardRows = CurrentHabitRates
+            .OrderByDescending(x => x.Value)
+            .Select((kv, i) =>
+            {
+                var habit = AllHabits.FirstOrDefault(h => h.Name == kv.Key);
+                return new LeaderboardItem
+                {
+                    Position = i + 1,
+                    Name = kv.Key,
+                    CompletionRate = kv.Value,
+                    Streak = habit?.CurrentStreak ?? 0,
+                    BestStreak = habit?.BestStreak ?? 0,
+                    CurrentRank = habit?.CurrentRank ?? "Dormant",
+                    IsActive = habit?.IsActive ?? true
+                };
+            })
+            .ToList();
+    }
+
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+    private Color RateColor(double rate) =>
+        rate >= 70 ? Color.Success : rate >= 40 ? Color.Warning : Color.Error;
+
+    private Color RankChipColor(string rank) => rank switch
+    {
+        "Unbreakable" or "Legendary" or "Mythic" => Color.Error,
+        "Tempered" or "Refined" or "Hardened" => Color.Warning,
+        "Forged" or "Shaped" or "Solid" => Color.Info,
+        "Stable" or "Forming" => Color.Success,
+        _ => Color.Default
+    };
+
+    // ─── Models ────────────────────────────────────────────────────────────────
+    private class LeaderboardItem
+    {
+        public int Position { get; set; }
+        public string Name { get; set; } = "";
+        public double CompletionRate { get; set; }
+        public int Streak { get; set; }
+        public int BestStreak { get; set; }
+        public string CurrentRank { get; set; } = "Dormant";
+        public bool IsActive { get; set; } = true;
+    }
+}
+<style>
+    .dense-table td {
+        padding: 4px 12px !important;
+        height: 40px !important;
+    }
+    .mud-table-cell {
+        padding: 4px 8px !important;
+    }
+</style>

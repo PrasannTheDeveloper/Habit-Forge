@@ -1,0 +1,305 @@
+﻿@page "/Settings/Settings"
+@using HabitForge_MudBlazor.Services
+@using System.Diagnostics;
+@using MudBlazor
+@using HabitForge_MudBlazor.Models
+@using Microsoft.Win32
+@inject SettingsService settingsService
+@inject ISnackbar Snackbar
+@using Setting = HabitForge_MudBlazor.Models.Settings
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudText Typo="Typo.h4" GutterBottom="true" Class="fw-bold">Application Settings</MudText>
+    <MudText Typo="Typo.body2" Class="mb-6" Color="Color.Secondary">Changes are saved automatically.</MudText>
+
+    @if (settings == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudPaper Elevation="3" Class="pa-8 rad-4">
+            <MudStack Spacing="4">
+
+                @* --- Startup Setting with Registry Status --- *@
+                <div>
+                    <MudCheckBox @bind-Value="@settings.OpenAtStartUp"
+                                 @bind-Value:after="SaveSettings"
+                                 Label="Launch on System Startup"
+                                 Color="Color.Primary" />
+
+                    @* Registry Status Badge *@
+                    <div class="d-flex align-center ml-8 mt-1">
+                        @if (_isRegisteredInStartup == true)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                     Size="Size.Small"
+                                     Color="Color.Success"
+                                     Class="mr-1" />
+                            <MudText Typo="Typo.caption" Color="Color.Success">
+                                Registered in Windows startup
+                            </MudText>
+                        }
+                        else if (_isRegisteredInStartup == false)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Warning"
+                                     Size="Size.Small"
+                                     Color="Color.Warning"
+                                     Class="mr-1" />
+                            <MudText Typo="Typo.caption" Color="Color.Warning">
+                                Not registered in Windows startup
+                            </MudText>
+                            <MudTooltip Text="The setting is ON but the tray app hasn't registered yet. Open the tray app once to apply.">
+                                <MudIcon Icon="@Icons.Material.Filled.Info"
+                                         Size="Size.Small"
+                                         Color="Color.Default"
+                                         Class="ml-1"
+                                         Style="cursor:pointer; opacity:0.6;" />
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            @* null = still checking *@
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" />
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Checking registry...</MudText>
+                        }
+                    </div>
+                </div>
+
+                <MudCheckBox @bind-Value="@settings.RunInBackground"
+                             @bind-Value:after="ToggleTrayProcess"
+                             Label="Keep Running in System Tray"
+                             Color="Color.Primary" />
+
+                <MudCheckBox @bind-Value="@settings.EnableNotification"
+                             @bind-Value:after="SaveSettings"
+                             Label="Enable Desktop Notifications"
+                             Color="Color.Primary" />
+
+                <MudDivider DividerType="DividerType.FullWidth" Class="my-4" />
+
+                <div class="d-flex align-center justify-space-between">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Sync" Size="Size.Small" Class="mr-2" Color="Color.Success" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Auto-save enabled
+                        </MudText>
+                    </div>
+                    <MudText Typo="Typo.caption" Style="opacity: 0.7;">
+                        Last Sync: @settings.LastUpdated.ToString("t")
+                    </MudText>
+                </div>
+
+            </MudStack>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private Setting settings;
+    private static Process _trayProcess;
+
+    // null = loading, true = registered, false = not registered
+    private bool? _isRegisteredInStartup = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        settings = await settingsService.GetSettings();
+        CheckRegistryStatus();
+    }
+
+    private void CheckRegistryStatus()
+    {
+        _isRegisteredInStartup = null; 
+
+        try
+        {
+            const string appName = "HabitForgeTray";
+            using var key = Registry.CurrentUser.OpenSubKey(
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", false);
+
+            if (key == null)
+            {
+                _isRegisteredInStartup = false;
+                return;
+            }
+
+            var value = key.GetValue(appName);
+            _isRegisteredInStartup = value != null;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Registry check failed: {ex.Message}");
+            _isRegisteredInStartup = false;
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        try
+        {
+            settings.LastUpdated = DateTime.Now;
+            await settingsService.SaveSettings(settings);
+
+            // Write registry directly — don't rely on tray being alive
+            ApplyStartupRegistry(settings.OpenAtStartUp);  // ← ADD THIS
+
+            // Still notify tray if it's running (so it stays in sync)
+            NotifyTrayToReloadSettings();
+
+            await Task.Delay(800);
+            CheckRegistryStatus();
+            StateHasChanged();
+
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomRight;
+            Snackbar.Add("Changes saved", Severity.Success, config =>
+            {
+                config.ShowCloseIcon = false;
+                config.VisibleStateDuration = 1000;
+            });
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Auto-save failed: {ex.Message}", Severity.Error);
+        }
+    }
+    // In Settings.razor @code block
+
+    private string GetTrayExePath()
+    {
+        // Try beside the MAUI app first (published location)
+        string beside = Path.Combine(
+            Path.GetDirectoryName(Environment.ProcessPath) ?? "",
+            "TrayApp", "Habit Forge.exe");
+
+        if (File.Exists(beside)) return beside;
+
+        // Fallback: known absolute path (dev machine)
+        string devPath = @"C:\Users\pg888\source\repos\HabitForge_MudBlazor\HabitForge_MudBlazor\TrayApp\Habit Forge.exe";
+        if (File.Exists(devPath)) return devPath;
+
+        return string.Empty;
+    }
+
+    private void ApplyStartupRegistry(bool enable)
+    {
+        const string appName = "HabitForgeTray";
+        string exePath = GetTrayExePath();
+
+        if (enable && string.IsNullOrEmpty(exePath))
+        {
+            Snackbar.Add("Tray exe not found — startup not registered.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+
+            if (key == null) return;
+
+            if (enable)
+                key.SetValue(appName, $"\"{exePath}\"");
+            else
+                key.DeleteValue(appName, false);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Registry write failed: {ex.Message}", Severity.Error);
+            Debug.WriteLine($"Registry error: {ex.Message}");
+        }
+    }
+    private void NotifyTrayToReloadSettings()
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                using var client = new System.IO.Pipes.NamedPipeClientStream(
+                    ".", "HabitForgeTrayPipe",
+                    System.IO.Pipes.PipeDirection.Out);
+
+                await client.ConnectAsync(500);
+                using var writer = new StreamWriter(client);
+                await writer.WriteLineAsync("RELOAD_SETTINGS");
+            }
+            catch
+            {
+                // Tray might not be running — that's fine, tray will apply on next launch
+            }
+        });
+    }
+
+    private async Task ToggleTrayProcess()
+    {
+        await SaveSettings();
+
+        if (settings.RunInBackground)
+            await StartTrayApp();
+        else
+            KillTrayApp();
+    }
+
+    private async Task StartTrayApp()
+    {
+        try
+        {
+            string exePath = Path.Combine(AppContext.BaseDirectory, "TrayApp", "Habit Forge.exe");
+
+            if (!File.Exists(exePath))
+                exePath = Path.Combine(
+                    Path.GetDirectoryName(Environment.ProcessPath) ?? "",
+                    "TrayApp", "Habit Forge.exe");
+
+            if (File.Exists(exePath))
+            {
+                var existing = Process.GetProcessesByName("Habit Forge");
+                if (existing.Length == 0)
+                {
+                    _trayProcess = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = exePath,
+                        UseShellExecute = true,
+                        WorkingDirectory = Path.GetDirectoryName(exePath)
+                    });
+
+                    // Give tray time to start, then re-check registry
+                    await Task.Delay(2000);
+                    CheckRegistryStatus();
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Tray executable not found.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error starting tray: {ex.Message}");
+        }
+    }
+
+    private void KillTrayApp()
+    {
+        try
+        {
+            var processes = Process.GetProcessesByName("Habit Forge");
+            foreach (var p in processes)
+            {
+                p.Kill();
+                p.WaitForExit(1000);
+            }
+            _trayProcess = null;
+
+            CheckRegistryStatus();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to kill process: {ex.Message}");
+        }
+    }
+}

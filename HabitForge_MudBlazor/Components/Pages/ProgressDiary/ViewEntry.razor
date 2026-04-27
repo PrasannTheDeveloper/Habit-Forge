@@ -1,0 +1,519 @@
+﻿@page "/ProgressDiary/ViewEntry/{Id:int}"
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Services
+@using MudBlazor
+@inject ProgressDiaryService DiaryService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>@(_diary?.Title ?? "Diary Entry") — HabitForge</PageTitle>
+
+@if (_loading)
+{
+    <MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="60px" Class="mb-4 rounded-lg" />
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" Class="mb-4 rounded-lg" />
+                <MudGrid>
+                    <MudItem xs="12" md="4"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Class="rounded-lg" /></MudItem>
+                    <MudItem xs="12" md="4"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Class="rounded-lg" /></MudItem>
+                    <MudItem xs="12" md="4"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Class="rounded-lg" /></MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+}
+else if (_diary is null)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16 text-center">
+        <MudIcon Icon="@Icons.Material.Outlined.FindInPage" Style="font-size:72px;" Color="Color.Default" />
+        <MudText Typo="Typo.h5" Class="mt-4">Entry Not Found</MudText>
+        <MudText Typo="Typo.body1" Class="mb-6">This diary entry doesn't exist or has been deleted.</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="GoBack">Back to Diaries</MudButton>
+    </MudContainer>
+}
+else
+{
+    <!-- ── Hero Header ── -->
+    <MudPaper Elevation="4" Class="pa-6 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+            <MudStack>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit"
+                                   OnClick="GoBack" Size="Size.Small" />
+                    <MudText Typo="Typo.overline">
+                        PROGRESS DIARY
+                    </MudText>
+                </MudStack>
+                <MudText Typo="Typo.h4" >@_diary.Title</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" />
+                    <MudText Typo="Typo.body2">
+                        @_diary.CreatedAt.ToString("dddd, MMMM d, yyyy")
+                    </MudText>
+                    @if (_diary.LastUpdatedAt > _diary.CreatedAt.AddMinutes(1))
+                    {
+                        <MudChip T="string" Size="Size.Small" Icon="@Icons.Material.Filled.Edit"
+                                  DisableRipple="true">
+                            Edited @_diary.LastUpdatedAt.ToString("MMM d")
+                        </MudChip>
+                    }
+                </MudStack>
+            </MudStack>
+
+            <!-- Mood chip + actions -->
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudTooltip Text="@_diary.Mood.ToString()">
+                    <MudChip T="string" Icon="@GetMoodIcon(_diary.Mood)"
+                            
+                             DisableRipple="true">
+                        @GetMoodEmoji(_diary.Mood) @_diary.Mood
+                    </MudChip>
+                </MudTooltip>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight">
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="EditEntry">Edit Entry</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" OnClick="ConfirmDelete">Delete Entry</MudMenuItem>
+                </MudMenu>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+
+    <!-- ── Quick-stats row ── -->
+    <MudGrid Class="mb-4">
+        <!-- Productivity Score -->
+        <MudItem xs="6" sm="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg text-center">
+                <MudIcon Icon="@Icons.Material.Filled.PlaylistAddCircle" Color="Color.Warning" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Color="Color.Warning" Style="font-weight:800;">
+                    @_diary.ProductivityScore<MudText Inline="true" Typo="Typo.caption">/10</MudText>
+                </MudText>
+                <MudText Typo="Typo.caption" >Productivity</MudText>
+                <MudProgressLinear Value="@(_diary.ProductivityScore * 10)"
+                                   Color="@GetProductivityColor(_diary.ProductivityScore)"
+                                   Rounded="true" Class="mt-2" Style="height:6px;" />
+            </MudPaper>
+        </MudItem>
+
+        <!-- Mood category -->
+        <MudItem xs="6" sm="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg text-center">
+                <MudText Typo="Typo.h3">@GetMoodEmoji(_diary.Mood)</MudText>
+                <MudText Typo="Typo.subtitle2" Style="font-weight:700;">@_diary.Mood</MudText>
+                <MudText Typo="Typo.caption" >@GetMoodCategory(_diary.Mood)</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Habits linked -->
+        <MudItem xs="6" sm="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Loop" Color="Color.Success" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Color="Color.Success" Style="font-weight:800;">
+                    @(_diary.RelatedHabits?.Count ?? 0)
+                </MudText>
+                <MudText Typo="Typo.caption" >Habits Linked</MudText>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Tags count -->
+        <MudItem xs="6" sm="3">
+            <MudPaper Elevation="3" Class="pa-4 rounded-lg text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Tag" Color="Color.Info" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Color="Color.Info" Style="font-weight:800;">
+                    @(GetTagList().Count)
+                </MudText>
+                <MudText Typo="Typo.caption" >Tags</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- ── Main content ── -->
+    <MudGrid>
+        <!-- LEFT: Journal content -->
+        <MudItem xs="12" md="8">
+
+            <!-- Main entry content -->
+            <MudPaper Elevation="3" Class="pa-5 mb-4 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Style="font-weight:700;">Journal Entry</MudText>
+                </MudStack>
+                <MudDivider Class="mb-3" />
+                @if (string.IsNullOrWhiteSpace(_diary.Content))
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Icon="@Icons.Material.Filled.EditNote">
+                        No content written for this entry yet.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body1" Style="line-height:1.8; white-space:pre-wrap;">@_diary.Content</MudText>
+                }
+            </MudPaper>
+
+            <!-- Win of the Day -->
+            @if (!string.IsNullOrWhiteSpace(_diary.WinOfDay))
+            {
+                <MudPaper Elevation="3" Class="pa-5 mb-4 rounded-lg" Style="border-left: 4px solid var(--mud-palette-success);">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Success" />
+                        <MudText Typo="Typo.h6" Style="font-weight:700; color:var(--mud-palette-success-text);">Win of the Day</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body1" Style="line-height:1.7;">@_diary.WinOfDay</MudText>
+                </MudPaper>
+            }
+
+            <!-- Challenge of the Day -->
+            @if (!string.IsNullOrWhiteSpace(_diary.ChallengeOfDay))
+            {
+                <MudPaper Elevation="3" Class="pa-5 mb-4 rounded-lg" Style="border-left: 4px solid var(--mud-palette-warning);">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.FitnessCenter" Color="Color.Warning" />
+                        <MudText Typo="Typo.h6" Style="font-weight:700; color:var(--mud-palette-warning-text);">Challenge of the Day</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.body1" Style="line-height:1.7;">@_diary.ChallengeOfDay</MudText>
+                </MudPaper>
+            }
+
+            <!-- Tags -->
+            @if (GetTagList().Any())
+            {
+                <MudPaper Elevation="3" Class="pa-5 mb-4 rounded-lg">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Color="Color.Info" />
+                        <MudText Typo="Typo.h6" Style="font-weight:700;">Tags</MudText>
+                    </MudStack>
+                    <MudDivider Class="mb-3" />
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                        @foreach (var tag in GetTagList())
+                        {
+                            <MudChip T="string" Icon="@Icons.Material.Filled.Tag"
+                                     Color="Color.Info" Variant="Variant.Outlined" Size="Size.Small">
+                                @tag.Trim()
+                            </MudChip>
+                        }
+                    </MudStack>
+                </MudPaper>
+            }
+        </MudItem>
+
+        <!-- RIGHT: Sidebar -->
+        <MudItem xs="12" md="4">
+
+            <!-- Productivity breakdown -->
+            <MudPaper Elevation="3" Class="pa-5 mb-4 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Insights" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Style="font-weight:700;">Day Snapshot</MudText>
+                </MudStack>
+                <MudDivider Class="mb-3" />
+
+                <!-- Productivity -->
+                <MudStack Class="mb-3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.body2" >Productivity</MudText>
+                        <MudText Typo="Typo.body2" Style="font-weight:700;">@_diary.ProductivityScore / 10</MudText>
+                    </MudStack>
+                    <MudProgressLinear Value="@(_diary.ProductivityScore * 10)"
+                                       Color="@GetProductivityColor(_diary.ProductivityScore)"
+                                       Rounded="true" Style="height:8px;" />
+                    <MudText Typo="Typo.caption" Align="Align.Right">
+                        @GetProductivityLabel(_diary.ProductivityScore)
+                    </MudText>
+                </MudStack>
+
+                <!-- Mood energy bar -->
+                <MudStack>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.body2" >Mood Energy</MudText>
+                        <MudText Typo="Typo.body2" Style="font-weight:700;">@GetMoodEnergy(_diary.Mood)%</MudText>
+                    </MudStack>
+                    <MudProgressLinear Value="@GetMoodEnergy(_diary.Mood)"
+                                       Color="@GetMoodColor(_diary.Mood)"
+                                       Rounded="true" Style="height:8px;" />
+                    <MudText Typo="Typo.caption"  Align="Align.Right">
+                        @GetMoodCategory(_diary.Mood)
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+
+            <!-- Linked Habits -->
+            <MudPaper Elevation="3" Class="pa-5 mb-4 rounded-lg">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Loop" Color="Color.Success" />
+                        <MudText Typo="Typo.h6" Style="font-weight:700;">Linked Habits</MudText>
+                    </MudStack>
+                    <MudBadge Content="@(_diary.RelatedHabits?.Count ?? 0)" Color="Color.Success" Overlap="true">
+                        <MudIcon Icon="@Icons.Material.Filled.Done" Color="Color.Default" Size="Size.Small" />
+                    </MudBadge>
+                </MudStack>
+                <MudDivider Class="mb-3" />
+
+                @if (_diary.RelatedHabits == null || !_diary.RelatedHabits.Any())
+                {
+                    <MudAlert Severity="Severity.Normal" Dense="true" Icon="@Icons.Material.Outlined.LinkOff">
+                        No habits linked to this entry.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudList T="Habit" Dense="true" DisablePadding="true">
+                        @foreach (var habit in _diary.RelatedHabits)
+                        {
+                            <MudListItem T="Habit" Dense="true" Class="rounded mb-1"
+                                         Style="background:var(--mud-palette-background-grey);">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@GetHabitTypeIcon(habit.HabitType)"
+                                                 Color="@(habit.IsGoodHabit ? Color.Success : Color.Error)"
+                                                 Size="Size.Small" />
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2" Style="font-weight:600;">@habit.Name</MudText>
+                                            @if (!string.IsNullOrWhiteSpace(habit.Description))
+                                            {
+                                                <MudText Typo="Typo.caption" 
+                                                         Style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                                    @habit.Description
+                                                </MudText>
+                                            }
+                                        </MudStack>
+                                    </MudStack>
+                                    <MudTooltip Text="@($"Streak: {habit.CurrentStreak} days — Rank: {habit.CurrentRank}")">
+                                        <MudChip T="string" Size="Size.Small" DisableRipple="true"
+                                                 Color="@GetRankColor(habit.CurrentRank ?? "Dormant")"
+                                                 Style="height:22px; font-size:0.68rem;">
+                                            @(habit.CurrentRank ?? "Dormant")
+                                        </MudChip>
+                                    </MudTooltip>
+                                </MudStack>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudPaper>
+
+           
+                   
+
+        </MudItem>
+    </MudGrid>
+
+    <!-- ── Bottom action bar ── -->
+    <MudPaper Elevation="3" Class="pa-4 mt-4 rounded-lg">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Text"
+                       Color="Color.Default" OnClick="GoBack">
+                All Diaries
+            </MudButton>
+            <MudStack Row="true" Spacing="2">
+                <MudButton StartIcon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined"
+                           Color="Color.Error" OnClick="ConfirmDelete">
+                    Delete
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Edit" Variant="Variant.Filled"
+                           Color="Color.Primary" OnClick="EditEntry">
+                    Edit Entry
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+}
+
+<!-- Delete confirmation dialog -->
+<MudDialog @bind-Visible="_deleteDialogOpen" Options="_dialogOptions">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
+            <MudText Typo="Typo.h6">Delete Entry</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudText>Are you sure you want to permanently delete <strong>"@_diary?.Title"</strong>? This action cannot be undone.</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => _deleteDialogOpen = false" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="DeleteEntry"
+                   StartIcon="@Icons.Material.Filled.Delete">
+            Delete Forever
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ProgressDiary? _diary;
+    private bool _loading = true;
+    private bool _deleteDialogOpen = false;
+
+    private readonly DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.ExtraSmall,
+        FullWidth = true,
+        CloseOnEscapeKey = true
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _diary = await DiaryService.GetProgressDiaryAsync(Id);
+        _loading = false;
+    }
+
+    // ── Navigation ──────────────────────────────────────────────
+    private void GoBack() => Navigation.NavigateTo("/ProgressDiary/Index");
+    private void EditEntry() => Navigation.NavigateTo($"/ProgressDiary/Edit/{Id}");
+    private void ConfirmDelete() => _deleteDialogOpen = true;
+
+    private async Task DeleteEntry()
+    {
+        var success = await DiaryService.DeleteProgressDiaryAsync(Id);
+        _deleteDialogOpen = false;
+        if (success)
+        {
+            Snackbar.Add("Diary entry deleted.", Severity.Success);
+            Navigation.NavigateTo("/ProgressDiary/Index");
+        }
+        else
+        {
+            Snackbar.Add("Failed to delete entry. Please try again.", Severity.Error);
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────
+    private List<string> GetTagList() =>
+        string.IsNullOrWhiteSpace(_diary?.Tags)
+            ? new List<string>()
+            : _diary.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+    private int GetWordCount()
+    {
+        if (string.IsNullOrWhiteSpace(_diary?.Content)) return 0;
+        return _diary.Content.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+    }
+
+    private int GetReadTime() => Math.Max(1, GetWordCount() / 200);
+
+    // ── Mood helpers ─────────────────────────────────────────────
+    private static string GetMoodEmoji(Moods mood) => mood switch
+    {
+        Moods.Happy => "😄",
+        Moods.Sad => "😢",
+        Moods.Neutral => "😐",
+        Moods.Anxious => "😰",
+        Moods.Excited => "🤩",
+        Moods.Focused => "🎯",
+        Moods.Productive => "⚡",
+        Moods.Motivated => "🔥",
+        Moods.Inspired => "💡",
+        Moods.Tired => "😴",
+        Moods.Stressed => "😤",
+        Moods.Frustrated => "😠",
+        Moods.BurntOut => "🪫",
+        Moods.Distracted => "🌀",
+        Moods.Calm => "😌",
+        Moods.Grateful => "🙏",
+        Moods.Reflective => "🪞",
+        Moods.Confident => "💪",
+        _ => "😐"
+    };
+
+    private static string GetMoodIcon(Moods mood) => mood switch
+    {
+        Moods.Happy or Moods.Excited or Moods.Motivated => Icons.Material.Filled.SentimentVerySatisfied,
+        Moods.Sad or Moods.Frustrated or Moods.BurntOut => Icons.Material.Filled.SentimentVeryDissatisfied,
+        Moods.Focused or Moods.Productive or Moods.Inspired => Icons.Material.Filled.Bolt,
+        Moods.Calm or Moods.Grateful or Moods.Reflective => Icons.Material.Filled.SelfImprovement,
+        Moods.Tired or Moods.Stressed or Moods.Anxious => Icons.Material.Filled.SentimentDissatisfied,
+        _ => Icons.Material.Filled.SentimentNeutral
+    };
+
+    private static string GetMoodCategory(Moods mood) => mood switch
+    {
+        Moods.Happy or Moods.Excited or Moods.Motivated or Moods.Inspired or Moods.Confident => "High Energy",
+        Moods.Focused or Moods.Productive => "Peak Performance",
+        Moods.Tired or Moods.Stressed or Moods.Anxious or Moods.Frustrated or Moods.BurntOut or Moods.Distracted => "Low / Struggling",
+        Moods.Calm or Moods.Grateful or Moods.Reflective => "Calm & Balanced",
+        _ => "Neutral"
+    };
+
+    private static int GetMoodEnergy(Moods mood) => mood switch
+    {
+        Moods.Excited => 95,
+        Moods.Motivated => 90,
+        Moods.Inspired => 88,
+        Moods.Confident => 85,
+        Moods.Happy => 80,
+        Moods.Productive => 82,
+        Moods.Focused => 78,
+        Moods.Calm => 60,
+        Moods.Grateful => 65,
+        Moods.Reflective => 55,
+        Moods.Neutral => 50,
+        Moods.Anxious => 45,
+        Moods.Distracted => 35,
+        Moods.Tired => 25,
+        Moods.Stressed => 30,
+        Moods.Frustrated => 20,
+        Moods.Sad => 20,
+        Moods.BurntOut => 10,
+        _ => 50
+    };
+
+    private static Color GetMoodColor(Moods mood) => mood switch
+    {
+        Moods.Happy or Moods.Excited or Moods.Motivated or Moods.Confident or Moods.Inspired => Color.Success,
+        Moods.Focused or Moods.Productive => Color.Primary,
+        Moods.Calm or Moods.Grateful or Moods.Reflective => Color.Info,
+        Moods.Tired or Moods.Stressed or Moods.Distracted => Color.Warning,
+        Moods.Sad or Moods.Frustrated or Moods.BurntOut or Moods.Anxious => Color.Error,
+        _ => Color.Default
+    };
+
+    // ── Productivity helpers ──────────────────────────────────────
+    private static Color GetProductivityColor(int score) => score switch
+    {
+        >= 9 => Color.Success,
+        >= 7 => Color.Primary,
+        >= 5 => Color.Warning,
+        _ => Color.Error
+    };
+
+    private static string GetProductivityLabel(int score) => score switch
+    {
+        10 => "🏆 Perfect Day!",
+        9 => "🔥 Excellent",
+        8 => "⚡ Great",
+        7 => "✅ Good",
+        6 => "👍 Above Average",
+        5 => "😐 Average",
+        4 => "⚠️ Below Average",
+        3 => "😓 Tough Day",
+        2 => "💤 Very Low",
+        1 => "🪫 Minimal",
+        _ => "N/A"
+    };
+
+    // ── Habit helpers ─────────────────────────────────────────────
+    private static string GetHabitTypeIcon(TypeOfHabit type) => type switch
+    {
+        TypeOfHabit.Checkbox => Icons.Material.Filled.CheckBox,
+        TypeOfHabit.Numeric => Icons.Material.Filled.Numbers,
+        TypeOfHabit.List => Icons.Material.Filled.List,
+        TypeOfHabit.Hours => Icons.Material.Filled.Schedule,
+        TypeOfHabit.Percent => Icons.Material.Filled.Percent,
+        _ => Icons.Material.Filled.FiberManualRecord
+    };
+
+    private static Color GetRankColor(string rank) => rank switch
+    {
+        "Unbreakable" or "Legendary" => Color.Error,
+        "Mythic" or "Tempered" => Color.Secondary,
+        "Refined" or "Hardened" or "Forged" => Color.Primary,
+        "Shaped" or "Solid" or "Stable" => Color.Success,
+        "Forming" or "Warming" or "Molten" => Color.Info,
+        "Ember" or "Spark" => Color.Warning,
+        _ => Color.Default
+    };
+}

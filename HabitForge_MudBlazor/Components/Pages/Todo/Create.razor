@@ -1,0 +1,173 @@
+﻿@page "/Todo/Create"
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Service
+@using HabitForge_MudBlazor.Services
+@using MudBlazor
+@inject ToDoService ToDoService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject NavbarAsHeaderService NavAsHeader
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-2">
+    <EditForm Model="@todo" OnValidSubmit="HandleTodo">
+        <DataAnnotationsValidator />
+    
+        @code{
+            protected override async Task OnParametersSetAsync()
+            {
+        await NavAsHeader.SetNavAsHeaderProperties(Icons.Material.Filled.PlaylistAdd, "Create Task", "Create and manage your tasks");
+            }
+        }
+
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="4" Class="rounded-lg mb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">
+                                <MudIcon Icon="@Icons.Material.Filled.Assignment" Size="Size.Small" Class="mr-2" />Task Details
+                            </MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudTextField @bind-Value="todo.Title"
+                                      Label="Title"
+                                      Placeholder="e.g., Morning Workout"
+                                      HelperText="Give your task a short, descriptive name"
+                                      For="(() => todo.Title)"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Normal"
+                                      Clearable="true" />
+
+                        <MudTextField @bind-Value="todo.Description"
+                                      Label="Description"
+                                      Placeholder="Enter any specific details or steps..."
+                                      HelperText="Optional: Add context to help you complete this task"
+                                      For="(() => todo.Description)"
+                                      Lines="3"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Normal"
+                                      Clearable="true" />
+                        <div class="custom-select-wrapper">
+                            <label class="custom-label">Priority</label>
+                            <select @bind="todo.Priority" class="forge-select">
+                                <option value="@Priority.Low">Low</option>
+                                <option value="@Priority.Medium">Medium</option>
+                                <option value="@Priority.High">High</option>
+                                <option value="@Priority.Urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="4" Class="h-100 rounded-lg">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">
+                                <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="mr-2" />Scheduling
+                            </MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudDatePicker Label="Due Date"
+                                       @bind-Date="todo.DueDate"
+                                       MinDate="DateTime.Today"
+                                       Placeholder="Select completion date"
+                                       HelperText="When does this need to be finished?"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Normal"
+                                       Editable="true" />
+
+                        <MudTimePicker Label="Reminder Time"
+                                       @bind-Time="_reminderTime"
+                                       AmPm="true"
+                                       Variant="Variant.Outlined"
+                                       HelperText="Pick a time to be alerted" />
+                    
+                        <MudAlert Severity="Severity.Info" Class="mt-4" Variant="Variant.Text">
+                            Tasks with clear deadlines are 40% more likely to be completed on time.
+                        </MudAlert>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" Class="d-flex justify-end py-6">
+                <MudButton ButtonType="ButtonType.Button"
+                           Variant="Variant.Outlined"
+                           OnClick="Cancel"
+                           Class="mr-4 rounded-lg">
+                    Discard Changes
+                </MudButton>
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Size="Size.Large">
+                    Create Task
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+</MudContainer>
+
+@code {
+    private Todo todo = new();
+    private TimeSpan? _reminderTime;
+
+    private async Task HandleTodo()
+    {
+        try
+        {
+            if (todo.DueDate == null)
+            {
+                Snackbar.Add("Please select a Due Date", Severity.Warning);
+                return;
+            }
+            
+            if (todo.DueDate.Value.Date < DateTime.Today.Date)
+            {
+                Snackbar.Add("Due date cannot be in the past", Severity.Error);
+                return;
+            }
+            
+            if (_reminderTime.HasValue)
+            {
+                todo.ReminderTime = todo.DueDate.Value.Date.Add(_reminderTime.Value);
+            }
+            else
+            {
+                DateTime defaultReminder = DateTime.Now.AddHours(1);
+                
+                if (defaultReminder.Date <= todo.DueDate.Value.Date)
+                {
+                    todo.ReminderTime = defaultReminder;
+                }
+                else
+                {
+                    todo.ReminderTime = null;
+                }
+            }
+
+            if (todo.ReminderTime.HasValue && todo.ReminderTime < DateTime.Now)
+            {
+                Snackbar.Add("Reminder time cannot be in the past", Severity.Error);
+                return;
+            }
+
+            bool success = await ToDoService.CreateTodoAsync(todo);
+            if (success)
+            {
+                Snackbar.Add("Task successfully Created!", Severity.Success);
+                NavigationManager.NavigateTo("/Todo/Index");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private void Cancel() => NavigationManager.NavigateTo("/Todo/Index");
+}

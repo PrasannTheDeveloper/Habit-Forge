@@ -1,0 +1,160 @@
+﻿@page "/Todo/Index"
+@using MudBlazor
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Service
+@using HabitForge_MudBlazor.Services
+@inject ISnackbar Snackbar
+@inject ToDoService ToDoService
+@inject IDialogService DialogService
+@inject NavbarAsHeaderService NavAsHeader 
+
+<style>
+    .dense-table td {
+        padding: 4px 12px !important;
+        height: 40px !important;
+    }
+    .mud-table-cell {
+        padding: 4px 8px !important;
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-2">
+
+    @code {
+    protected override async Task OnParametersSetAsync()
+    {
+    await NavAsHeader.SetNavAsHeaderProperties(
+        Icons.Material.Filled.Checklist,
+        "Task Manager",
+        "Organize tasks, track progress, and finish what matters."
+             );
+        }
+    }
+
+    <MudTable Items="todos"
+              T="Todo"
+              Hover="true"
+              Dense="true"
+              Breakpoint="Breakpoint.Sm"
+              Elevation="4"
+              Filter="new Func<Todo,bool>(FilterFunc1)"
+              Class="rounded-lg dense-table">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">My Tasks</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString"
+                          Placeholder="Search..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Small"
+                          Class="mt-0" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<Todo, object>(x => x.Title)">Task</MudTableSortLabel></MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Todo, object>(x => x.Priority)">Priority</MudTableSortLabel></MudTh>
+            @* Fix: Ensure fallback is the same type (DateTime) *@
+            <MudTh><MudTableSortLabel SortBy="new Func<Todo, object>(x => x.DueDate ?? DateTime.MaxValue)">Due Date</MudTableSortLabel></MudTh>
+            @* Fix: Since your Create page saves it as Date + Time, handle it as DateTime? *@
+            <MudTh><MudTableSortLabel SortBy="new Func<Todo, object>(x => x.ReminderTime ?? DateTime.MaxValue)">Reminder</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Todo, object>(x => x.CreatedAt)">Created</MudTableSortLabel></MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh Style="text-align:right">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Title">
+                <MudText Typo="Typo.body2" Style="@(context.IsCompleted ? "text-decoration: line-through; opacity: 0.6;" : "font-weight:600;")">
+                    @context.Title
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Description">
+                <MudText Typo="Typo.caption" Inline="false" Class="text-truncate" Style="max-width: 150px;">
+                    @context.Description
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Priority">
+                <MudChip T="Priority" Color="@GetPriorityColor(context.Priority)" Size="Size.Small" Variant="Variant.Text">
+                    @context.Priority
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Due Date">
+                <MudText Typo="Typo.caption">@(context.DueDate?.ToShortDateString() ?? "—")</MudText>
+            </MudTd>
+            <MudTd DataLabel="Reminder">
+                @if (context.ReminderTime.HasValue)
+                {
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.Alarm" Size="Size.Small" Color="Color.Info" />
+                        <MudText Typo="Typo.caption">@context.ReminderTime.Value.ToString("hh:mm tt")</MudText>
+                    </MudStack>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Style="opacity:0.5">None</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="Created">
+                <MudText Typo="Typo.caption">@context.CreatedAt.ToShortDateString()</MudText>
+            </MudTd>
+            <MudTd DataLabel="Status">
+                <MudCheckBox T="bool"
+                             Value="@context.IsCompleted"
+                             ValueChanged="@((bool val) => OnToggleTodo(context.Id))"
+                             Color="Color.Success"
+                             Size="Size.Small" />
+            </MudTd>
+            <MudTd Style="text-align:right">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Href="@($"/Todo/Edit/{context.Id}")" Size="Size.Small" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => OnDeleteTask(context.Id))" Size="Size.Small" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudAlert Severity="Severity.Info">No tasks found.</MudAlert>
+        </NoRecordsContent>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private List<Todo> todos = new List<Todo>();
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData() => todos = await ToDoService.GetAllTodosAsync();
+
+    private async Task OnToggleTodo(int id)
+    {
+        var success = await ToDoService.ToggleIsCompleteAsync(id);
+        if (success)
+        {
+            await LoadData();
+            Snackbar.Add("Status updated!", Severity.Success);
+        }
+    }
+
+    private async Task OnDeleteTask(int id)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync("Warning", "Delete task?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            await ToDoService.DeleteTodoAsync(id);
+            await LoadData();
+            Snackbar.Add("Task Deleted", Severity.Success);
+        }
+    }
+
+    private bool FilterFunc1(Todo element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        return (element.Title?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false) || 
+               (element.Description?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false);
+    }
+
+    private Color GetPriorityColor(Priority priority) => priority switch
+    {
+        Priority.Urgent => Color.Error,
+        Priority.High => Color.Warning,
+        Priority.Medium => Color.Info,
+        _ => Color.Default
+    };
+}

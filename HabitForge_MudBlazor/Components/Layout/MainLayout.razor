@@ -1,0 +1,312 @@
+﻿@inherits LayoutComponentBase
+@using MudBlazor
+@using HabitForge_MudBlazor.Themes
+@using HabitForge_MudBlazor.Services
+@using HabitForge_MudBlazor.Models
+@implements IDisposable
+
+@inject NavbarAsHeaderService NavAsHeader
+@inject NavigationManager NavigationManager
+
+<MudThemeProvider @ref="_mudThemeProvider"
+                  Theme="_activeTheme"
+                  @bind-IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+@* Load fonts from Google Fonts - Added RetroForge fonts *@
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Quicksand:wght@300;400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Fredoka+One&family=VT323&family=Press+Start+2P&family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap"
+      rel="stylesheet" />
+
+<MudLayout>
+    <MudAppBar Elevation="3">
+        @* <MudIconButton Icon="@Icons.Material.Filled.Menu" Class="small"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@(() => DrawerToggle())" /> *@
+
+      @*   <MudDivider Vertical="true" FlexItem="true" Class="mx-3 my-2" /> *@
+        <div class="d-flex flex-column">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                @if (!string.IsNullOrWhiteSpace(_navAsHeader.Icon))
+                {
+                    <MudIcon Icon="@_navAsHeader.Icon" />
+                }
+                <MudText Typo="Typo.h5" Class="gradient-text fw-bold">@_navAsHeader.Title</MudText>
+            </MudStack>
+            <MudText Typo="Typo.body2">@_navAsHeader.Subtitle</MudText>
+        </div>
+        <MudSpacer />
+
+        @* ── Theme selector menu ── *@
+        <MudMenu Icon="@Icons.Material.Filled.Palette"
+                 Color="Color.Inherit"
+                 Title="Theme"
+                 Edge="Edge.End"
+                 AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight">
+
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.DefaultLight))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.LightMode" Size="Size.Small" />
+                    <MudText>Default Light</MudText>
+                    @if (_currentThemeMode == ThemeMode.DefaultLight)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.DefaultDark))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.DarkMode" Size="Size.Small" />
+                    <MudText>Default Dark</MudText>
+                    @if (_currentThemeMode == ThemeMode.DefaultDark)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudDivider />
+
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.CyberPunkLight))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Small" />
+                    <MudText>Funky Light</MudText>
+                    @if (_currentThemeMode == ThemeMode.CyberPunkLight)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.CyberPunkDark))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.NightsStay" Size="Size.Small" />
+                    <MudText>Midnight Dark</MudText>
+                    @if (_currentThemeMode == ThemeMode.CyberPunkDark)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudDivider />
+
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.AnimeClassroomLight))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Palette" Size="Size.Small" />
+                    <MudText>Aesthetic Light</MudText>
+                    @if (_currentThemeMode == ThemeMode.AnimeClassroomLight)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.AnimeClassroomDark))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoGraph" Size="Size.Small" />
+                    <MudText>Aesthetic Dark</MudText>
+                    @if (_currentThemeMode == ThemeMode.AnimeClassroomDark)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudDivider />
+
+            @* ── NEW: RetroForge Theme Options ── *@
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.RetroForgeLight))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Terminal" Size="Size.Small" />
+                    <MudText>Mainframe Gold</MudText>
+                    @if (_currentThemeMode == ThemeMode.RetroForgeLight)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudMenuItem OnClick="@(() => SetTheme(ThemeMode.RetroForgeDark))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" />
+                    <MudText>Shell Terminal (Green/Dark)</MudText>
+                    @if (_currentThemeMode == ThemeMode.RetroForgeDark)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Success" />
+                    }
+                </MudStack>
+            </MudMenuItem>
+
+            <MudDivider />
+
+        </MudMenu>
+        <MudTooltip Text="Backup/Export">
+            <MudIconButton Icon="@Icons.Material.Filled.Backup"
+                           Color="Color.Inherit"
+                           OnClick="@(() => NavigationManager.NavigateTo("/Backup/Backup"))" />
+        </MudTooltip>
+
+        <MudTooltip Text="Settings">
+            <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                           Color="Color.Inherit"
+                           Edge="Edge.End"
+                           OnClick="@(() => NavigationManager.NavigateTo("/Settings/Settings"))" />
+        </MudTooltip>
+
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="3">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-4">
+            <ErrorBoundary>
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent Context="err">
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        <div style="font-weight:600;">An unhandled exception occurred</div>
+                        <div style="margin-top:8px;">@err.Message</div>
+                        <pre style="white-space:pre-wrap; overflow:auto; margin-top:8px;">@err.ToString()</pre>
+                    </MudAlert>
+                </ErrorContent>
+            </ErrorBoundary>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+
+    // ── Theme mode enum ───────────────────────────────────────────────────
+    private enum ThemeMode
+    {
+        DefaultLight,
+        DefaultDark,
+        CyberPunkLight,
+        CyberPunkDark,
+        AnimeClassroomLight,
+        AnimeClassroomDark,
+        RetroForgeLight,   
+        RetroForgeDark      
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────
+    private bool _drawerOpen = true;
+    private bool _isDarkMode;
+    private MudThemeProvider _mudThemeProvider = null!;
+    private ThemeMode _currentThemeMode = ThemeMode.DefaultLight;
+    private MudTheme _activeTheme = new MudTheme();   // default MudBlazor theme
+
+    private NavAsHeaderProperties _navAsHeader = new NavAsHeaderProperties();
+
+    protected override void OnInitialized()
+    {
+        NavAsHeader.OnChange += HandleHeaderChanged;
+        _navAsHeader = NavAsHeader.Properties;
+    }
+
+    private void HandleHeaderChanged()
+    {
+        _navAsHeader = NavAsHeader.Properties;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavAsHeader.OnChange -= HandleHeaderChanged;
+    }
+
+    // ── Theme switching ───────────────────────────────────────────────────
+    private void SetTheme(ThemeMode mode)
+    {
+        _currentThemeMode = mode;
+
+        switch (mode)
+        {
+            case ThemeMode.DefaultLight:   
+                _activeTheme = new MudTheme()
+                {
+                    PaletteLight = new PaletteLight()
+                    {
+                        // This makes the AppBar match the standard background color
+                        AppbarBackground = "#ffffff",
+                        AppbarText = "#424242"
+                    }
+                };
+                _isDarkMode = false;
+                break;
+
+            case ThemeMode.DefaultDark:
+                _activeTheme = new MudTheme();
+                _isDarkMode = true;
+                break;
+
+            case ThemeMode.CyberPunkLight:
+                _activeTheme = CyberPunkTheme.LightTheme;
+                _isDarkMode = false;
+                break;
+
+            case ThemeMode.CyberPunkDark:
+                _activeTheme = CyberPunkTheme.DarkTheme;
+                _isDarkMode = true;
+                break;
+
+            case ThemeMode.AnimeClassroomLight:
+                _activeTheme = AnimeClassroomTheme.LightTheme;
+                _isDarkMode = false;
+                break;
+
+            case ThemeMode.AnimeClassroomDark:
+                _activeTheme = AnimeClassroomTheme.DarkTheme;
+                _isDarkMode = true;
+                break;
+
+            // ── NEW: RetroForge Theme Cases ──
+            case ThemeMode.RetroForgeLight:
+                _activeTheme = RetroForgeTheme.LightTheme;
+                _isDarkMode = false;
+                break;
+
+            case ThemeMode.RetroForgeDark:
+                _activeTheme = RetroForgeTheme.DarkTheme;
+                _isDarkMode = true;
+                break;
+        }
+
+        // Persist
+        Microsoft.Maui.Storage.Preferences.Default.Set("theme_mode", (int)mode);
+    }
+
+    private void ToggleDefaultTheme()
+    {
+        SetTheme(_isDarkMode ? ThemeMode.DefaultLight : ThemeMode.DefaultDark);
+    }
+
+    void DrawerToggle() => _drawerOpen = !_drawerOpen;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Restore persisted theme
+        if (Microsoft.Maui.Storage.Preferences.Default.ContainsKey("theme_mode"))
+        {
+            var saved = (ThemeMode)Microsoft.Maui.Storage.Preferences.Default.Get("theme_mode", 0);
+            SetTheme(saved);
+        }
+        else
+        {
+            // Fall back to system dark/light preference with Default theme
+            var systemDark = await _mudThemeProvider.GetSystemDarkModeAsync();
+            SetTheme(systemDark ? ThemeMode.DefaultDark : ThemeMode.DefaultLight);
+        }
+
+        StateHasChanged();
+    }
+}

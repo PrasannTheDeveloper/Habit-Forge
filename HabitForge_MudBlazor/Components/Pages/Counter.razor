@@ -1,0 +1,70 @@
+﻿@page "/Counter"
+@using MudBlazor
+
+<MudText Typo="Typo.h4" Class="mb-4">Habit Forge Analytics</MudText>
+
+<MudGrid>
+    @* 1. BAR CHART - Notice the T="double" *@
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Weekly Habit Completion</MudText>
+            <MudChart T="double"
+                      ChartType="ChartType.Bar"
+                      ChartSeries="@_barSeries"
+                      XAxisLabels="@_weekLabels"
+                      Width="100%"
+                      Height="300px" />
+        </MudPaper>
+    </MudItem>
+
+    @* 2. LINE CHART - Notice the T="double" *@
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Productivity Score Trend</MudText>
+            <MudChart T="double"
+                      ChartType="ChartType.Line"
+                      ChartSeries="@_lineSeries"
+                      XAxisLabels="@_weekLabels"
+                      Width="100%"
+                      Height="300px" />
+        </MudPaper>
+    </MudItem>
+
+    @* 3. DONUT CHART *@
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6">Habit Categories</MudText>
+            <div class="d-flex justify-center">
+                <MudChart T="double"
+                          ChartType="ChartType.Donut"
+                          InputData="@_donutData"
+                          InputLabels="@_donutLabels"
+                          Width="300px"
+                          Height="300px">
+                    <CustomGraphics>
+                        <text x="47%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" style="font-size: 20px;">Total</text>
+                    </CustomGraphics>
+                </MudChart>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string[] _weekLabels = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+
+    // You MUST add <double> to ChartSeries
+    private List<ChartSeries<double>> _barSeries = new List<ChartSeries<double>>()
+    {
+        new ChartSeries<double>() { Name = "Completed", Data = new double[] { 5, 8, 6, 9, 4, 10, 7 } },
+        new ChartSeries<double>() { Name = "Missed", Data = new double[] { 2, 1, 3, 0, 5, 1, 2 } }
+    };
+
+    private List<ChartSeries<double>> _lineSeries = new List<ChartSeries<double>>()
+    {
+        new ChartSeries<double>() { Name = "Focus Score", Data = new double[] { 65, 70, 85, 80, 75, 95, 90 } }
+    };
+
+    private double[] _donutData = { 5, 3, 4 };
+    private string[] _donutLabels = { "Fitness", "Work", "Reading" };
+}

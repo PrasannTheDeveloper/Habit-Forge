@@ -1,0 +1,644 @@
+﻿@page "/Habits/Edit/{HabitId:int}"
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Services
+@using MudBlazor
+@inject CategoryService categoryService
+@inject HabitService HabitService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavbarAsHeaderService NavAsHeader
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-2">
+
+@code{
+    protected override async Task OnParametersSetAsync()
+    {
+        await NavAsHeader.SetNavAsHeaderProperties(Icons.Material.Filled.Edit, "Edit Habit", "Update your habit details and preferences");
+    }
+}
+
+    @if (habitToEdit == null)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="py-12" Spacing="3">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+            <MudText Color="Color.Secondary">Loading habit details...</MudText>
+        </MudStack>
+    }
+    else
+    {
+        <EditForm Model="@habitToEdit" OnValidSubmit="HandleUpdate">
+                <ChildContent Context="formContext">
+                    <DataAnnotationsValidator />
+
+                    <MudGrid Spacing="4">
+
+                    @* ════════════════════════════════
+                       LEFT COLUMN — main settings
+                       ════════════════════════════════ *@
+                    <MudItem xs="12" md="8">
+
+                        @* ── 1. Basic Information ── *@
+                        <MudCard Elevation="4" Class="mb-4 rounded-lg">
+                            <MudCardHeader Class="pb-0">
+                                <CardHeaderAvatar>
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" />
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6" Style="font-weight:600;">Basic Information</MudText>
+                                    <MudText Typo="Typo.caption" >Name and describe your habit</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudDivider Class="mt-2" />
+                            <MudCardContent Class="pt-4">
+
+                                <MudTextField Label="Habit Name"
+                                              @bind-Value="habitToEdit.Name"
+                                              For="@(() => habitToEdit.Name)"
+                                              Variant="Variant.Outlined"
+                                              Placeholder="e.g., Read 20 pages"
+                                              HelperText="Give your habit a clear, actionable name"
+                                              Margin="Margin.Normal" />
+
+                                <MudTextField Label="Description"
+                                              @bind-Value="habitToEdit.Description"
+                                              For="@(() => habitToEdit.Description)"
+                                              Variant="Variant.Outlined"
+                                              Lines="3"
+                                              Placeholder="Why does this habit matter to you?"
+                                              HelperText="Optional — helps you stay motivated"
+                                              Margin="Margin.Normal" />
+
+                                <MudDivider Class="my-3" />
+
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1">
+                                    <MudText Typo="Typo.body2" Style="font-weight:500;">Category</MudText>
+                                    <MudLink Href="/Category/Index" Typo="Typo.caption">
+                                        <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" />Manage categories
+                                    </MudLink>
+                                </MudStack>
+
+                                <div class="mb-2">
+                          
+                                    <InputSelect TValue="int?" @bind-Value="habitToEdit.CategoryId" class="forge-select" style="display:block; width:100%; padding:8px; border-radius:6px; border:1px solid var(--mud-palette-divider);">
+                                        <option value="">— No category —</option>
+                                        @if (categories != null)
+                                        {
+                                            @foreach (var cat in categories)
+                                            {
+                                                <option value="@cat.CategoryId">@cat.Name</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <div class="mud-typography mud-typography-caption" style="color:var(--mud-palette-text-secondary);">Group similar habits together</div>
+                                </div>
+
+                            </MudCardContent>
+                        </MudCard>
+
+                        @* ── 2. Habit Type & Tracking ── *@
+                        <MudCard Elevation="4" Class="mb-4 rounded-lg">
+                            <MudCardHeader Class="pb-0">
+                                <CardHeaderAvatar>
+                                    <MudIcon Icon="@Icons.Material.Filled.TrackChanges" Color="Color.Secondary" />
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6" Style="font-weight:600;">Habit Type & Tracking</MudText>
+                                    <MudText Typo="Typo.caption">Define what you're tracking and how</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudDivider Class="mt-2" />
+                            <MudCardContent Class="pt-4">
+
+                                @* Build vs Quit *@
+                                <MudText Typo="Typo.body2" Style="font-weight:500;" Class="mb-2">Habit Goal</MudText>
+                                <MudStack Row="true" Spacing="2" Class="mb-1">
+                                    <MudButton Variant="@(habitToEdit.IsGoodHabit? Variant.Filled: Variant.Outlined)"
+                                               Color="Color.Success"
+                                               StartIcon="@Icons.Material.Filled.TrendingUp"
+                                               OnClick="@(() => habitToEdit.IsGoodHabit = true)"
+                                               Style="flex:1;">
+                                        Build Habit
+                                    </MudButton>
+                                    <MudButton Variant="@(!habitToEdit.IsGoodHabit ? Variant.Filled : Variant.Outlined)"
+                                               Color="Color.Error"
+                                               StartIcon="@Icons.Material.Filled.Block"
+                                               OnClick="@(() => habitToEdit.IsGoodHabit = false)"
+                                               Style="flex:1;">
+                                        Quit Habit
+                                    </MudButton>
+                                </MudStack>
+                                <MudAlert Severity="@(habitToEdit.IsGoodHabit? Severity.Success: Severity.Warning)"
+                                          Dense="true"
+                                          Class="mb-4">
+                                    @if (habitToEdit.IsGoodHabit)
+                                    {
+                                        <span>Track your progress building a positive habit.</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Track days you successfully avoided this habit.</span>
+                                    }
+                                </MudAlert>
+
+                                <MudDivider Class="mb-4" />
+
+                                @* Tracking Method *@
+                                <MudText Typo="Typo.body2" Style="font-weight:500;" Class="mb-2">Tracking Method</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Primary" Class="mb-3">
+                                    Choose how you'll measure completion each day
+                                </MudText>
+
+                                <MudToggleGroup T="TypeOfHabit"
+                                                SelectionMode="SelectionMode.SingleSelection"
+                                                Value="habitToEdit.HabitType"
+                                                ValueChanged="@((TypeOfHabit t) => OnHabitTypeChanged(t))"
+                                                Color="Color.Primary"
+                                                CheckMark
+                                                FixedContent
+                                                Class="d-flex mb-4"
+                                                Style="flex-wrap: nowrap; overflow-x: auto;">
+                                    @foreach (var type in Enum.GetValues<TypeOfHabit>())
+                                    {
+                                        <MudToggleItem Value="@type">@type.ToString()</MudToggleItem>
+                                    }
+                                </MudToggleGroup>
+
+                                @* Tracking method descriptions *@
+                                <MudPaper Elevation="4" Class="mb-4 rounded-lg" Style="background: var(--mud-palette-background-grey);">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @switch (habitToEdit.HabitType)
+                                        {
+                                            case TypeOfHabit.Checkbox:
+                                                <span><strong>Checkbox</strong> — Mark done or not done. Ideal for simple yes/no habits.</span>
+                                                break;
+                                            case TypeOfHabit.Numeric:
+                                                <span><strong>Numeric</strong> — Log a count each day (e.g., push-ups, glasses of water).</span>
+                                                break;
+                                            case TypeOfHabit.Hours:
+                                                <span><strong>Hours</strong> — Log time spent on the habit per day.</span>
+                                                break;
+                                            case TypeOfHabit.Percent:
+                                                <span><strong>Percent</strong> — Log a percentage of completion (0–100%).</span>
+                                                break;
+                                            case TypeOfHabit.List:
+                                                <span><strong>List</strong> — Complete a checklist of sub-tasks to mark the habit done.</span>
+                                                break;
+                                        }
+                                    </MudText>
+                                </MudPaper>
+
+                                @* Goal Value *@
+                                @if (habitToEdit.HabitType != TypeOfHabit.Checkbox && habitToEdit.HabitType != TypeOfHabit.List)
+                                {
+                                    string unit = habitToEdit.HabitType switch
+                                    {
+                                        TypeOfHabit.Hours => "hours",
+                                        TypeOfHabit.Percent => "%",
+                                        TypeOfHabit.Numeric => "count",
+                                        _ => "value"
+                                    };
+                                    <MudNumericField Label="@($"Daily Goal ({unit})")"
+                                                     @bind-Value="habitToEdit.GoalValue"
+                                                     For="@(() => habitToEdit.GoalValue)"
+                                                     Variant="Variant.Outlined"
+                                                     Min="0.1"
+                                                     HelperText="@($"Target {unit} to complete this habit each day")"
+                                                     Style="max-width:240px;" />
+                                }
+
+                                @* Sub-tasks for List type *@
+                                @if (habitToEdit.HabitType == TypeOfHabit.List)
+                                {
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+                                        <MudText Typo="Typo.body2" Style="font-weight:500;">Sub-Tasks</MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">
+                                            @habitToEdit.HabitListTemplates.Count task(s)
+                                        </MudChip>
+                                    </MudStack>
+                                    <MudAlert Typo="Typo.caption" Severity="Severity.Info" Class="mb-3">
+                                        All sub-tasks must be checked to complete this habit for the day.
+                                    </MudAlert>
+
+                                    @for (int i = 0; i < habitToEdit.HabitListTemplates.Count; i++)
+                                    {
+                                        var item = habitToEdit.HabitListTemplates[i];
+                                        int index = i;
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2" Spacing="2">
+                                            <MudAvatar Size="Size.Small"
+                                                       Color="Color.Primary"
+                                                       Variant="Variant.Outlined"
+                                                       Style="font-size:12px; width:28px; height:28px; min-width:28px;">
+                                                @(index + 1)
+                                            </MudAvatar>
+                                            <MudTextField @bind-Value="item.Name"
+                                                          Variant="Variant.Outlined"
+                                                          Placeholder="Describe this task..."
+                                                          Margin="Margin.Dense"
+                                                          FullWidth="true" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                                           Color="Color.Error"
+                                                           Size="Size.Small"
+                                                           OnClick="@(() => RemoveListItem(item))" />
+                                        </MudStack>
+                                    }
+
+                                    <MudButton StartIcon="@Icons.Material.Filled.Add"
+                                               Variant="Variant.Outlined"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               OnClick="AddListItem"
+                                               Class="mt-1">
+                                        Add Sub-Task
+                                    </MudButton>
+                                }
+
+                            </MudCardContent>
+                        </MudCard>
+
+                        @* ── 3. Rest Days ── *@
+                        <MudCard Elevation="4" Class="mb-4 rounded-lg">
+                            <MudCardHeader Class="pb-0">
+                                <CardHeaderAvatar>
+                                    <MudIcon Icon="@Icons.Material.Filled.EventBusy" Color="Color.Warning" />
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6" Style="font-weight:600;">Rest Days</MudText>
+                                    <MudText Typo="Typo.caption" >Schedule days off — these won't count against your streak</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudDivider Class="mt-2" />
+                            <MudCardContent Class="pt-4">
+
+                                <MudText Typo="Typo.body2" Style="font-weight:500;" Class="mb-2">Weekly Rest Days</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Warning" Class="mb-3">
+                                    Toggle days you regularly take off each week
+                                </MudText>
+                                <MudStack Row="true" Wrap="Wrap.Wrap" Class="mb-5 gap-2">
+                                    @foreach (DayOfWeek day in Enum.GetValues<DayOfWeek>())
+                                    {
+                                        bool isRest = habitToEdit.WeeklyRestDays.Contains(day);
+                                        <MudButton Variant="@(isRest? Variant.Filled: Variant.Outlined)"
+                                                   Color="@(isRest ? Color.Warning : Color.Default)"
+                                                   Size="Size.Small"
+                                                   Style="min-width:48px; padding:6px 8px; font-size:12px;"
+                                                   OnClick="@(() => ToggleWeeklyDay(day))">
+                                            @day.ToString().Substring(0, 3)
+                                        </MudButton>
+                                    }
+                                </MudStack>
+
+                                <MudDivider Class="mb-4" />
+
+                                <MudText Typo="Typo.body2" Style="font-weight:500;" Class="mb-1">Specific Off Dates</MudText>
+                                <MudText Typo="Typo.caption" Class="mb-3">
+                                    Add one-off dates (holidays, travel, etc.)
+                                </MudText>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3" Spacing="2">
+                                     <div>
+                                    @* Give it a fixed container so it doesn't squash *@
+                                    <MudDatePicker Label="Reference Date"
+                                                   @bind-Date="newRestDate"
+                                                   PickerVariant="PickerVariant.Inline"
+                                                   Variant="Variant.Outlined"
+                                                   Margin="Margin.Dense"
+                                                   DisableToolbar="true"
+                                                   Class="tiny-datepicker" />
+                                </div>
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Add"
+                                               OnClick="AddSpecificDate">
+                                        Add Date
+                                    </MudButton>
+                                </MudStack>
+
+                                @if (!habitToEdit.SpecificRestDates.Any())
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                                        No specific off dates added yet.
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudStack Row="true" Wrap="Wrap.Wrap" Class="gap-1 mt-1">
+                                        @foreach (var date in habitToEdit.SpecificRestDates.OrderBy(d => d))
+                                        {
+                                            <MudChip T="string"
+                                                     Color="Color.Warning"
+                                                     Variant="Variant.Outlined"
+                                                     Size="Size.Small"
+                                                     OnClose="@(() => RemoveSpecificDate(date))">
+                                                @date.ToString("MMM d, yyyy")
+                                            </MudChip>
+                                        }
+                                    </MudStack>
+                                }
+
+                            </MudCardContent>
+                        </MudCard>
+
+                    </MudItem>
+
+                    @* ════════════════════════════════
+                       RIGHT COLUMN — actions + summary
+                       ════════════════════════════════ *@
+                    <MudItem xs="12" md="4">
+
+                        @* ── Actions (sticky) ── *@
+                        <MudCard Elevation="4" Class="mb-4 rounded-lg" Style="position:sticky; top:16px;">
+                            <MudCardHeader Class="pb-0">
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6" Style="font-weight:600;">Actions</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudDivider Class="mt-2" />
+                            <MudCardContent Class="pt-4">
+                                <MudStack Spacing="2">
+                                    <MudButton ButtonType="ButtonType.Submit"
+                                               Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Save"
+                                               FullWidth="true"
+                                               Size="Size.Large">
+                                        Save Changes
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Default"
+                                               StartIcon="@Icons.Material.Filled.Close"
+                                               FullWidth="true"
+                                               OnClick="Cancel">
+                                        Cancel
+                                    </MudButton>
+                                </MudStack>
+
+                                <MudDivider Class="my-4" />
+
+                                @* Habit Summary *@
+                                <MudText Typo="Typo.caption" Style="font-weight:600; text-transform:uppercase; letter-spacing:0.5px;" Color="Color.Primary" Class="mb-3">
+                                    Current Settings
+                                </MudText>
+
+                                <MudStack Spacing="2">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.caption" >Type</MudText>
+                                        <MudChip T="string"
+                                                 Size="Size.Small"
+                                                 Color="@(habitToEdit.IsGoodHabit ? Color.Success : Color.Error)"
+                                                 Variant="Variant.Filled">
+                                            @(habitToEdit.IsGoodHabit ? "Build" : "Quit")
+                                        </MudChip>
+                                    </MudStack>
+
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.caption" >Tracking</MudText>
+                                        <MudChip T="string"
+                                                 Size="Size.Small"
+                                                 Color="Color.Primary"
+                                                 Variant="Variant.Outlined">
+                                            @habitToEdit.HabitType.ToString()
+                                        </MudChip>
+                                    </MudStack>
+
+                                    @if (habitToEdit.HabitType != TypeOfHabit.Checkbox && habitToEdit.HabitType != TypeOfHabit.List)
+                                    {
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <MudText Typo="Typo.caption" >Daily Goal</MudText>
+                                            <MudText Typo="Typo.caption" Style="font-weight:500;">@habitToEdit.GoalValue</MudText>
+                                        </MudStack>
+                                    }
+
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.caption" >Weekly Rest</MudText>
+                                        <MudText Typo="Typo.caption" Style="font-weight:500;">
+                                            @(habitToEdit.WeeklyRestDays.Any()
+                                                ? string.Join(", ", habitToEdit.WeeklyRestDays.Select(d => d.ToString().Substring(0, 3)))
+                                                : "None")
+                                        </MudText>
+                                    </MudStack>
+
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.caption" >Off Dates</MudText>
+                                        <MudText Typo="Typo.caption" Style="font-weight:500;">@habitToEdit.SpecificRestDates.Count date(s)</MudText>
+                                    </MudStack>
+
+                                    @if (categories != null && habitToEdit.CategoryId.HasValue)
+                                    {
+                                        var cat = categories.FirstOrDefault(c => c.CategoryId == habitToEdit.CategoryId);
+                                        if (cat != null)
+                                        {
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                                <MudText Typo="Typo.caption" Color="Color.Warning">Category</MudText>
+                                                <MudText Typo="Typo.caption" Style="font-weight:500;">@cat.Name</MudText>
+                                            </MudStack>
+                                        }
+                                    }
+                                </MudStack>
+
+                                <MudDivider Class="my-4" />
+
+                                @* Danger Zone *@
+                                <MudText Typo="Typo.caption" Style="font-weight:600; text-transform:uppercase; letter-spacing:0.5px;" Color="Color.Error" Class="mb-2">
+                                    Danger Zone
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="mb-3">
+                                    Deleting a habit is permanent and removes all its history.
+                                </MudText>
+                                <MudButton Variant="Variant.Outlined"
+                                           Color="Color.Error"
+                                           StartIcon="@Icons.Material.Filled.DeleteForever"
+                                           FullWidth="true"
+                                           OnClick="@(() => DeleteHabit(habitToEdit.HabitId))">
+                                    Delete Habit
+                                </MudButton>
+                            </MudCardContent>
+                        </MudCard>
+
+                    </MudItem>
+
+                    </MudGrid>
+                </ChildContent>
+        </EditForm>
+    }
+
+</MudContainer>
+
+@code {
+    [Parameter] public int HabitId { get; set; }
+    private Habit? habitToEdit;
+    private DateTime? newRestDate = DateTime.Today;
+    private List<Category> categories = new();
+    private List<Habit> existingHabit = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var data = await HabitService.GetHabitbyIdAsync(HabitId);
+            categories = await categoryService.GetAllCategoriesAsync();
+            existingHabit = await HabitService.GetAllHabitAsync();
+            if (data != null)
+            {
+                habitToEdit = data;
+                habitToEdit.HabitListTemplates ??= new();
+            }
+            else
+            {
+                Navigation.NavigateTo("/Habits/Index");
+            }
+        }
+        catch
+        {
+            categories = new();
+            existingHabit = new();
+            Navigation.NavigateTo("/Habits/Index");
+            return;
+        }
+    }
+
+    private void OnCategoryChangedEdit(int? id)
+    {
+        try
+        {
+            if (habitToEdit != null) habitToEdit.CategoryId = id;
+        }
+        catch
+        {
+            if (habitToEdit != null) habitToEdit.CategoryId = null;
+        }
+    }
+
+    private void OnHabitTypeChanged(TypeOfHabit type)
+    {
+        habitToEdit!.HabitType = type;
+        habitToEdit.GoalValue = type switch
+        {
+            TypeOfHabit.Numeric => 10,
+            TypeOfHabit.Hours => 1,
+            TypeOfHabit.Percent => 100,
+            _ => 1
+        };
+        if (type == TypeOfHabit.List) habitToEdit.HabitListTemplates ??= new();
+    }
+
+    private void ToggleWeeklyDay(DayOfWeek day)
+    {
+        if (habitToEdit == null) return;
+        var current = habitToEdit.WeeklyRestDays;
+        if (current.Contains(day))
+        {
+            current.Remove(day);
+        }
+        else
+        {
+            var allDays = Enum.GetValues<DayOfWeek>().ToList();
+            if (current.Count >= allDays.Count - 1)
+            {
+                Snackbar.Add("You can't mark every day as a rest day — at least one active day is required.", Severity.Warning);
+                return;
+            }
+            current.Add(day);
+        }
+        habitToEdit.WeeklyRestDays = current;
+    }
+
+    private void AddSpecificDate()
+    {
+        if (habitToEdit == null || !newRestDate.HasValue) return;
+        var current = habitToEdit.SpecificRestDates;
+        if (!current.Any(d => d.Date == newRestDate.Value.Date))
+        {
+            current.Add(newRestDate.Value);
+            habitToEdit.SpecificRestDates = current;
+            newRestDate = DateTime.Today;
+        }
+    }
+
+    private void RemoveSpecificDate(DateTime date)
+    {
+        if (habitToEdit == null) return;
+        var current = habitToEdit.SpecificRestDates;
+        current.RemoveAll(d => d.Date == date.Date);
+        habitToEdit.SpecificRestDates = current;
+    }
+
+    private void AddListItem()
+    {
+        if (habitToEdit == null) return;
+        habitToEdit.HabitListTemplates ??= new();
+
+        if (habitToEdit.HabitListTemplates.Any(t => string.IsNullOrWhiteSpace(t.Name)))
+        {
+            Snackbar.Add("Please fill in the existing empty task before adding a new one.", Severity.Warning);
+            return;
+        }
+
+        habitToEdit.HabitListTemplates.Add(new HabitList { HabitId = HabitId });
+        StateHasChanged();
+    }
+
+    private void RemoveListItem(HabitList item) => habitToEdit?.HabitListTemplates?.Remove(item);
+
+    private async Task HandleUpdate()
+    {
+        if (habitToEdit == null) return;
+
+        bool nameExists = existingHabit.Any(h =>
+        h.HabitId != habitToEdit.HabitId &&
+        h.Name.Trim().Equals(habitToEdit.Name.Trim(), StringComparison.OrdinalIgnoreCase));
+
+
+        if (nameExists)
+        {
+            Snackbar.Add("A habit with this name already exists. Please choose a different name.", Severity.Warning);
+            return;
+        }
+        if (habitToEdit.HabitType != TypeOfHabit.List)
+        {
+            habitToEdit.HabitListTemplates?.Clear();
+        }
+        else
+        {
+            habitToEdit.HabitListTemplates = habitToEdit.HabitListTemplates
+                ?.Where(t => !string.IsNullOrWhiteSpace(t.Name))
+                .ToList() ?? new();
+
+            if (!habitToEdit.HabitListTemplates.Any())
+            {
+                Snackbar.Add("Please add at least one sub-task for a List habit.", Severity.Warning);
+                return;
+            }
+        }
+
+        if (habitToEdit.CategoryId == 0) habitToEdit.CategoryId = null;
+
+        try
+        {
+            var result = await HabitService.UpdateHabitAsync(habitToEdit);
+            Snackbar.Add("Habit updated successfully!", Severity.Success);
+            Navigation.NavigateTo("/Habits/Index");
+        }
+        catch
+        {
+            Snackbar.Add("Something went wrong. Please try again.", Severity.Error);
+        }
+    }
+
+    private async Task DeleteHabit(int habitId)
+    {
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Delete Habit",
+            $"Are you sure you want to delete '{habitToEdit?.Name}'? This action cannot be undone and all history will be lost.",
+            yesText: "Yes, delete permanently",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            await HabitService.DeleteHabitAsync(habitId);
+            Snackbar.Add("Habit deleted.", Severity.Info);
+            Navigation.NavigateTo("/Habits/Index");
+        }
+    }
+
+    private void Cancel() => Navigation.NavigateTo("/Habits/Index");
+}

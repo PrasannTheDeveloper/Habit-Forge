@@ -1,0 +1,714 @@
+﻿@page "/Habits/Index"
+@using HabitForge_MudBlazor.Services
+@using HabitForge_MudBlazor.Models
+@using MudBlazor
+@inject HabitService habitService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavbarAsHeaderService NavAsHeader
+
+<MudContainer Class="pa-2">
+
+    @if (habits == null)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+        <MudText Align="Align.Center" Class="mt-4 mud-text-secondary">Loading your habits…</MudText>
+    }
+    else
+    {
+
+        @* ── Stats Row ── *@
+        <MudGrid Class="mb-2 " >
+            <MudItem xs="6" md="2">
+                <MudCard Elevation="3" Style="border-top: 4px solid var(--mud-palette-primary);">
+                    <MudCardContent Class="pa-2 ">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Today</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        </MudStack>
+                        <MudText Typo="Typo.h6">
+                            @CompletedToday<MudText Typo="Typo.body2" Inline="true" Class="mud-text-secondary">/@TotalHabits</MudText>
+                        </MudText>
+                        <MudProgressLinear Value="@(TotalHabits > 0 ? (CompletedToday * 100.0 / TotalHabits) : 0)"
+                                           Color="Color.Success" Size="Size.Small" Class="mt-1" />
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="6" md="2">
+                <MudCard Elevation="3" Style="border-top: 4px solid var(--mud-palette-success);">
+                    <MudCardContent Class="pa-2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Streaks</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment" Color="Color.Error" Size="Size.Small" />
+                        </MudStack>
+                        <MudText Typo="Typo.h6">@TotalFireStreak</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">combined days</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="6" md="2">
+                <MudCard Elevation="3" Style="border-top: 4px solid var(--mud-palette-warning);">
+                    <MudCardContent Class="pa-2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Consistency</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Primary" Size="Size.Small" />
+                        </MudStack>
+                        <MudText Typo="Typo.h6" Color="Color.Success">@AvgConsistency%</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="6" md="3">
+                <MudCard Elevation="3" Style="border-top: 4px solid var(--mud-palette-info);">
+                    <MudCardContent Class="pa-2">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Champion</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Warning" Size="Size.Small" />
+                        </MudStack>
+                        <MudText Typo="Typo.body1" Class="text-truncate">@(TopHabit?.Name ?? "—")</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            @(TopHabit != null ? $"{TopHabit.CurrentStreak}d · {TopHabit.CurrentRank}" : "None")
+                        </MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" md="3">
+                <MudCard Elevation="3" Style="border-top: 4px solid var(--mud-palette-error);">
+                    <MudCardContent Class="pa-2">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Habit Types</MudText>
+                        <MudStack Row="true" Justify="Justify.SpaceAround" AlignItems="AlignItems.Center" Class="mt-1">
+                            <MudStack AlignItems="AlignItems.Center" Spacing="0">
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small">@GoodHabits</MudChip>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Build</MudText>
+                            </MudStack>
+                            <MudDivider Vertical="true" FlexItem="true" />
+                            <MudStack AlignItems="AlignItems.Center" Spacing="0">
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small">@BadHabits</MudChip>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Quit</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+        <MudDivider Class="my-4">
+    <MudText Typo="Typo.caption"></MudText>
+</MudDivider>
+        <MudContainer>
+            <MudItem xs="12">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="4">
+                    <div >
+                        @* Give it a fixed container so it doesn't squash *@
+                        <MudDatePicker Label="Reference Date"
+                                       @bind-Date="CurrentReferenceDateNullable"
+                                       PickerVariant="PickerVariant.Inline"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       DisableToolbar="true"
+                                       Class="tiny-datepicker"/>
+                    </div>
+    
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" 
+                                       OnClick="@(() => ChangeWeek(-7))" Class="tiny-datepicker"/>
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning" Style="font-size:0.60rem;"
+                                   Size="Size.Small" OnClick="GoToToday" Class="tiny-datepicker">Today</MudButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                                       OnClick="@(() => ChangeWeek(7))" Class="tiny-datepicker"/>
+                        <MudButton Variant="Variant.Filled" Color="Color.Success"  Style="font-size:0.60rem;"
+                                   Size="Size.Small" Href="/Habits/Create" Class="tiny-datepicker">+ New Habit</MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+        </MudContainer>
+
+        @* ── Habit Table ── *@
+        <MudCard Elevation="4" Class="mb-2 rounded-lg" >
+            <MudCardContent Class="pa-0">
+               
+                <div style="overflow-x:auto;">
+                    <MudSimpleTable Style=" font-size:0.72rem; min-width:600px;" Hover="true" Dense="true">
+                        <thead>
+                            <tr style="text-align:center; border-bottom: 2px solid var(--mud-palette-text-disabled); z-index:0;" >
+                                <th style="text-align:left; min-width:60px; width:60px;">Rank</th>
+                                <th style="text-align:left; min-width:140px; width:140px;">Habit</th>
+                                <th style="min-width:30px; width:30px;">🔥</th>
+                               @foreach (var date in displayDates)
+{
+    var isToday = date.Date == DateTime.Today;
+    
+    // We move the style logic to border-bottom and ensure the background is transparent
+    <th style="min-width:34px; width:34px; padding:2px 2px 4px 2px; 
+               background: transparent; 
+               border-bottom: @(isToday ? "3px solid var(--mud-palette-primary)" : "3px solid transparent");">
+        
+        <div style="font-size:0.62rem; line-height:1; color: @(isToday ? "var(--mud-palette-primary)" : "inherit")">
+            @date.ToString("ddd").ToUpper()
+        </div>
+        
+        <div style="font-weight:700; font-size:0.70rem; color: @(isToday ? "var(--mud-palette-primary)" : "inherit")">
+            @date.Day
+        </div>
+    </th>
+}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var habit in habits)
+                            {
+                                <tr style="text-align:center;">
+
+                                    @* Rank *@
+                                    <td style="text-align:left; padding:2px 4px;">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudImage Src="@($"/Images/Ranking_Images/{habit.CurrentRank}.png")"
+                                                      Width="16" Height="16"
+                                                      ObjectFit="ObjectFit.Contain" />
+                                            <MudText Typo="Typo.caption" Style="max-width:50px;font-size:0.55rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                                @habit.CurrentRank
+                                            </MudText>
+                                        </MudStack>
+                                    </td>
+
+                                    @* Habit Name *@
+                                    <td style="text-align:left; padding:2px 4px; border-left: 3px solid @(habit.IsGoodHabit ? "var(--mud-palette-success)" : "var(--mud-palette-error)");">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80px;">
+                                                <MudText Typo="Typo.body2" Style="font-weight:600; display:inline;">@habit.Name</MudText>
+                                                @if (!habit.IsActive)
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Default"
+                                                             Style="font-size:8px; height:14px; margin-left:2px;">Paused</MudChip>
+                                                }
+                                                @if (!string.IsNullOrEmpty(habit.Category?.Name))
+                                                {
+                                                    <MudChip T="string" Size="Size.Small" Color="Color.Info"
+                                                             Style="font-size:8px; height:14px; margin-left:2px;">@habit.Category.Name</MudChip>
+                                                }
+                                            </div>
+                                            <MudStack Row="true" Spacing="0">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small" Color="Color.Primary"
+                                                               Style="padding:2px;"
+                                                               OnClick="@(() => EditHabit(habit.HabitId))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.BarChart"
+                                                               Size="Size.Small" Color="Color.Default"
+                                                               Style="padding:2px;"
+                                                               OnClick="@(() => OpenDetails(habit.HabitId))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Size="Size.Small" Color="Color.Error"
+                                                               Style="padding:2px;"
+                                                               OnClick="@(() => ConfirmDeleteHabit(habit.HabitId, habit.Name))" />
+                                            </MudStack>
+                                        </MudStack>
+                                    </td>
+
+                                    @* Streak *@
+                                    <td><MudText Typo="Typo.body2" Style="font-weight:700;">@habit.CurrentStreak</MudText></td>
+
+                                    @* Day Cells *@
+                                    @foreach (var date in displayDates)
+                                    {
+                                        var isToday = date.Date == DateTime.Today;
+                                        var isRest = habit.IsRestDay(date);
+                                        var isDone = IsEntryCompleted(habit, date);
+
+                                        <td style="padding:2px; ">
+                                            @if (isRest)
+                                            {
+                                                <MudIconButton Icon="@(isDone? Icons.Material.Filled.CheckCircle : null)"
+                                                               Color="@((isDone && habit.IsGoodHabit) ? Color.Success : (isDone) ? Color.Error : Color.Default)"
+                                                               Size="Size.Small"
+                                                               Title="Rest day – click to complete anyway"
+                                                               OnClick="@(() => OpenRestDayModal(habit, date))">
+                                                    @if (!isDone)
+                                                    {
+                                                        <span>🌙</span>
+                                                    }
+                                                </MudIconButton>
+                                            }
+                                            else if (habit.HabitType == TypeOfHabit.Checkbox)
+                                            {
+
+                                                    <MudIconButton Icon="@(isDone ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
+                                                               Color="@((isDone && habit.IsGoodHabit) ? Color.Success : (isDone) ? Color.Error : Color.Default)"
+                                                               Size="Size.Small"
+                                                               Style="padding:0; width:24px; height:24px;"
+                                                               OnClick="@(() => ToggleEntry(habit.HabitId, date))" />
+                                            }
+                                            else if (habit.HabitType == TypeOfHabit.List)
+                                            {
+                                                <MudButton Variant="@(isDone ? Variant.Filled : Variant.Outlined)"
+                                                           Color="@((isDone && habit.IsGoodHabit) ? Color.Success : (isDone) ? Color.Error : Color.Default)"
+                                                           Size="Size.Small"
+                                                           Style="font-size:0.62rem; min-width:0; padding:1px 4px;"
+                                                           OnClick="@(() => ToggleListDropdown(habit.HabitId, date))">
+                                                    @GetListProgress(habit, date)
+                                                </MudButton>
+
+                                                @if (activeListHabitId == habit.HabitId && activeListDate == date.Date)
+                                                {
+                                                    <MudCard Style="position:absolute; z-index:1050; min-width:160px; font-size:0.75rem;"
+                                                             Elevation="4" Class="pa-2 mt-1 text-start"
+                                                             @onclick:stopPropagation="true">
+                                                        <MudText Typo="Typo.body2" Style="font-weight:600;">@habit.Name</MudText>
+                                                        <MudText Typo="Typo.caption" Class="mud-text-secondary mb-1">@date.ToString("ddd, MMM d")</MudText>
+                                                        @foreach (var item in habit.HabitListTemplates ?? new())
+                                                        {
+                                                            <MudCheckBox T="bool"
+                                                                         Value="@IsListItemCompleted(habit, item.HabitListId, date)"
+                                                                         ValueChanged="@(_ => ToggleListItem(habit.HabitId, item.HabitListId, date))"
+                                                                         Label="@item.Name"
+                                                                         Dense="true"
+                                                                         Size="Size.Small" />
+                                                        }
+                                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                                                   FullWidth="true" Class="mt-1"
+                                                                   OnClick="CloseListDropdown">Close</MudButton>
+                                                    </MudCard>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <input type="number"
+                                                       style="width:38px; font-size:0.65rem; text-align:center; border:1px solid #ccc; border-radius:4px; padding:1px;"
+                                                       min="0"
+                                                       max="@habit.GoalValue"
+                                                       value="@GetNumericValue(habit, date)"
+                                                       class="@((isDone && habit.IsGoodHabit) ? "habit-input-success" : (isDone) ? "habit-input-error" : "habit-input-default")"
+                                                       @onchange="(e) => ToggleNumeric(habit.HabitId, date, e.Value)" />
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </div>
+            </MudCardContent>
+        </MudCard>
+
+        @* ── Footer Legend ── *@
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2 px-1">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                @habits.Count habit@(habits.Count != 1 ? "s" : "") tracked
+            </MudText>
+            <MudStack Row="true" Spacing="2">
+                <MudChip T="string" Color="Color.Success" Size="Size.Small">Build</MudChip>
+                <MudChip T="string" Color="Color.Error" Size="Size.Small">Quit</MudChip>
+                <MudChip T="string" Size="Size.Small">🌙 Rest</MudChip>
+            </MudStack>
+        </MudStack>
+
+        @* ── Rank Progression ── *@
+        <MudCard Elevation="3" Class="mb-3">
+            <MudCardContent Class="py-2 px-3">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase mb-2" Style="font-weight:600;">
+                    Rank Progression
+                </MudText>
+                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                    @foreach (var rank in RankLevels)
+                    {
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                 Style="@($"font-size:0.68rem; border-color:{rank.Color}; color:{rank.Color};")">
+                            @rank.Name @rank.MinDays+
+                        </MudChip>
+                    }
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    }
+
+    @* ── Rest Day Modal ── *@
+    @if (showRestModal && restModalHabit != null)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" ZIndex="1000" AutoClose="false" />
+        <div style="position:fixed; inset:0; z-index:1001; display:flex; align-items:center; justify-content:center; padding:16px;">
+            <MudCard Elevation="8" Style="min-width:300px; max-width:400px; width:100%;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.NightlightRound" Color="Color.Primary" />
+                            <div>
+                                <MudText Typo="Typo.h6">Rest Day</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @restModalDate.ToString("dddd, MMM d")
+                                </MudText>
+                            </div>
+                        </MudStack>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CloseRestModal" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Style="font-weight:600;" Class="mb-2">@restModalHabit.Name</MudText>
+
+                    @if (restModalType == "specific")
+                    {
+                        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">
+                            <strong>@restModalDate.ToString("MMM d")</strong> is a scheduled day off.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                            <strong>@restModalDate.ToString("dddd")s</strong> are your weekly rest day.
+                        </MudAlert>
+                    }
+
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                        Bonus completion won't break your streak.
+                    </MudAlert>
+
+                    @if (restModalHabit.HabitType == TypeOfHabit.Numeric ||
+                         restModalHabit.HabitType == TypeOfHabit.Hours ||
+                         restModalHabit.HabitType == TypeOfHabit.Percent)
+                    {
+                        string unit = restModalHabit.HabitType switch
+                        {
+                            TypeOfHabit.Hours => "hrs",
+                            TypeOfHabit.Percent => "%",
+                            _ => "count"
+                        };
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
+                            <MudText Typo="Typo.body2" Style="font-weight:600;">Value:</MudText>
+                            <MudNumericField T="double"
+                                             @bind-Value="restModalNumericValue"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Min="0"
+                                             Max="restModalHabit.GoalValue"
+                                             Style="max-width:90px;" />
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                @unit / @restModalHabit.GoalValue
+                            </MudText>
+                        </MudStack>
+                    }
+
+                    @if (restModalHabit.HabitType == TypeOfHabit.List)
+                    {
+                        <MudText Typo="Typo.body2" Style="font-weight:600;" Class="mt-2 mb-1">Check sub-tasks:</MudText>
+                        @foreach (var item in restModalHabit.HabitListTemplates ?? new())
+                        {
+                            <MudCheckBox T="bool"
+                                         Value="@IsListItemCompleted(restModalHabit, item.HabitListId, restModalDate)"
+                                         ValueChanged="@(_ => ToggleListItemRestDay(restModalHabit.HabitId, item.HabitListId, restModalDate))"
+                                         Label="@item.Name"
+                                         Dense="true" />
+                        }
+                    }
+                </MudCardContent>
+
+                <MudCardActions>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="CloseRestModal">
+                        Keep rest day
+                    </MudButton>
+                    <MudSpacer />
+                    @if (restModalHabit.HabitType == TypeOfHabit.Checkbox)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ConfirmRestCheckbox">
+                            @(IsEntryCompleted(restModalHabit, restModalDate) ? "Undo" : "Complete")
+                        </MudButton>
+                    }
+                    else if (restModalHabit.HabitType == TypeOfHabit.Numeric ||
+                             restModalHabit.HabitType == TypeOfHabit.Hours ||
+                             restModalHabit.HabitType == TypeOfHabit.Percent)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ConfirmRestNumeric">
+                            Save
+                        </MudButton>
+                    }
+                </MudCardActions>
+            </MudCard>
+        </div>
+    }
+
+</MudContainer>
+
+@code {
+    private List<Habit> habits = new();
+    private List<DateTime> displayDates = new();
+    private DateTime currentReferenceDate = DateTime.Today;
+
+    private DateTime? CurrentReferenceDateNullable
+    {
+        get => currentReferenceDate;
+        set
+        {
+            if (value.HasValue)
+            {
+                currentReferenceDate = value.Value;
+                UpdateWeekDisplay();
+                _ = NavAsHeader.SetNavAsHeaderProperties("Icons.Material.Filled.CalendarViewWeek","Weekly View", currentReferenceDate.ToString("MMM yyyy"));
+            }
+        }
+    }
+
+    private int activeListHabitId = 0;
+    private DateTime activeListDate = DateTime.MinValue;
+
+    private bool showRestModal = false;
+    private Habit? restModalHabit = null;
+    private DateTime restModalDate = DateTime.Today;
+    private string restModalType = "";
+    private double restModalNumericValue = 0;
+
+    // Stats
+    private int TotalHabits => habits?.Count ?? 0;
+    private int CompletedToday => habits?.Count(h => IsEntryCompleted(h, DateTime.Today)) ?? 0;
+    private int TotalFireStreak => habits?.Sum(h => h.CurrentStreak) ?? 0;
+    private double AvgConsistency => habits != null && habits.Any() ? Math.Round(habits.Average(h => h.ConsistencyRate), 1) : 0;
+    private Habit? TopHabit => habits?.OrderByDescending(h => h.CurrentStreak).FirstOrDefault();
+    private int GoodHabits => habits?.Count(h => h.IsGoodHabit) ?? 0;
+    private int BadHabits => habits?.Count(h => !h.IsGoodHabit) ?? 0;
+
+    private static readonly (string Name, int MinDays, string Color)[] RankLevels =
+    {
+        ("Dormant",     0,   "#94a3b8"),
+        ("Spark",       1,   "#64748b"),
+        ("Ember",       3,   "#fb923c"),
+        ("Molten",      7,   "#f97316"),
+        ("Warming",     10,  "#f59e0b"),
+        ("Forming",     14,  "#eab308"),
+        ("Stable",      21,  "#84cc16"),
+        ("Solid",       30,  "#22c55e"),
+        ("Shaped",      40,  "#10b981"),
+        ("Forged",      50,  "#14b8a6"),
+        ("Hardened",    65,  "#0ea5e9"),
+        ("Refined",     80,  "#3b82f6"),
+        ("Tempered",    95,  "#6366f1"),
+        ("Mythic",      110, "#8b5cf6"),
+        ("Legendary",   130, "#a855f7"),
+        ("Unbreakable", 150, "#ef4444"),
+    };
+
+    protected override async Task OnParametersSetAsync()
+{
+    await UpdateHeader();
+}
+
+    private async Task UpdateHeader()
+    {
+        await NavAsHeader.SetNavAsHeaderProperties(Icons.Material.Filled.DateRange,"Weekly View", currentReferenceDate.ToString("MMM yyyy"));
+    } 
+    protected override async Task OnInitializedAsync()
+    {
+        UpdateWeekDisplay();
+        await LoadData();
+        await NavAsHeader.SetNavAsHeaderProperties(Icons.Material.Filled.DateRange,"Weekly View", currentReferenceDate.ToString("MMM yyyy"));
+    }
+
+    private async Task LoadData()
+    {
+        habits = await habitService.GetAllHabitAsync();
+    }
+
+    private void UpdateWeekDisplay()
+    {
+        int diff = (14 + (currentReferenceDate.DayOfWeek - DayOfWeek.Sunday)) % 14;
+        DateTime start = currentReferenceDate.AddDays(-diff);
+        displayDates.Clear();
+        for (int i = 0; i < 14; i++) displayDates.Add(start.AddDays(i));
+    }
+
+    private void GoToToday()
+    {
+        currentReferenceDate = DateTime.Today;
+        UpdateWeekDisplay();
+        _ = NavAsHeader.SetNavAsHeaderProperties(Icons.Material.Filled.DateRange,"Weekly View", currentReferenceDate.ToString("MMM yyyy"));
+    }
+
+    private void ChangeWeek(int days)
+    {
+        currentReferenceDate = currentReferenceDate.AddDays(days);
+        UpdateWeekDisplay();
+        _ = NavAsHeader.SetNavAsHeaderProperties( Icons.Material.Filled.DateRange ,"Weekly View", currentReferenceDate.ToString("MMM yyyy"));
+    }
+
+    private void ToggleListDropdown(int habitId, DateTime date)
+    {
+        if (activeListHabitId == habitId && activeListDate == date.Date)
+            CloseListDropdown();
+        else
+        {
+            activeListHabitId = habitId;
+            activeListDate = date.Date;
+        }
+        StateHasChanged();
+    }
+
+    private void CloseListDropdown()
+    {
+        activeListHabitId = 0;
+        activeListDate = DateTime.MinValue;
+    }
+
+    private bool IsEntryCompleted(Habit habit, DateTime date) =>
+        habit.HabitEntries?.Any(e => e.Date.Date == date.Date && e.IsCompleted) ?? false;
+
+    private double GetNumericValue(Habit habit, DateTime date) =>
+        habit.HabitEntries?.FirstOrDefault(e => e.Date.Date == date.Date)?.Value ?? 0;
+
+    private string GetListProgress(Habit habit, DateTime date)
+    {
+        var entry = habit.HabitEntries?.FirstOrDefault(e => e.Date.Date == date.Date);
+        int done = entry?.ListCompletions?.Count(c => c.IsCompleted) ?? 0;
+        int total = habit.HabitListTemplates?.Count ?? 0;
+        return $"{done}/{total}";
+    }
+
+    private bool IsListItemCompleted(Habit habit, int listId, DateTime date)
+    {
+        var entry = habit.HabitEntries?.FirstOrDefault(e => e.Date.Date == date.Date);
+        return entry?.ListCompletions?.Any(c => c.HabitListId == listId && c.IsCompleted) ?? false;
+    }
+
+    private async Task ToggleEntry(int habitId, DateTime date)
+    {
+        if (await habitService.ToggleHabitEntryAsync(habitId, date))
+        {
+            await LoadData();
+            var habit = habits.FirstOrDefault(h => h.HabitId == habitId);
+            if (date.Date == DateTime.Today && IsEntryCompleted(habit!, date))
+                Snackbar.Add($"🔥 {habit?.Name} marked complete!", Severity.Success);
+        }
+    }
+
+    private async Task ToggleNumeric(int habitId, DateTime date, object? val)
+    {
+        if (double.TryParse(val?.ToString(), out var num))
+        {
+            var habit = habits.FirstOrDefault(h => h.HabitId == habitId);
+            num = Math.Max(0, Math.Min(num, habit?.GoalValue ?? num));
+            if (await habitService.ToggleHabitEntryAsync(habitId, date, num))
+            {
+                await LoadData();
+                habit = habits.FirstOrDefault(h => h.HabitId == habitId);
+                if (date.Date == DateTime.Today && IsEntryCompleted(habit!, date))
+                    Snackbar.Add($"🎯 {habit?.Name} — goal met!", Severity.Success);
+            }
+        }
+    }
+
+    private async Task ToggleListItem(int habitId, int listId, DateTime date)
+    {
+        if (await habitService.ToggleHabitListItemAsync(habitId, listId, date))
+        {
+            await LoadData();
+            if (showRestModal && restModalHabit?.HabitId == habitId)
+                restModalHabit = habits.FirstOrDefault(h => h.HabitId == habitId);
+            StateHasChanged();
+        }
+    }
+
+    private void OpenRestDayModal(Habit habit, DateTime date)
+    {
+        restModalHabit = habit;
+        restModalDate = date;
+        restModalNumericValue = GetNumericValue(habit, date);
+        restModalType = habit.SpecificRestDates.Any(d => d.Date == date.Date) ? "specific" : "weekly";
+        showRestModal = true;
+    }
+
+    private void CloseRestModal()
+    {
+        showRestModal = false;
+        restModalHabit = null;
+    }
+
+    private async Task ConfirmRestCheckbox()
+    {
+        if (restModalHabit == null) return;
+        if (await habitService.ToggleHabitEntryAsync(restModalHabit.HabitId, restModalDate))
+            await LoadData();
+        CloseRestModal();
+        Snackbar.Add("💪 Rest day override saved!", Severity.Success);
+    }
+
+    private async Task ConfirmRestNumeric()
+    {
+        if (restModalHabit == null) return;
+        double capped = Math.Min(Math.Max(0, restModalNumericValue), restModalHabit.GoalValue);
+        if (await habitService.ToggleHabitEntryAsync(restModalHabit.HabitId, restModalDate, capped))
+            await LoadData();
+        CloseRestModal();
+        Snackbar.Add("🔥 Rest day value updated!", Severity.Success);
+    }
+
+    private async Task ToggleListItemRestDay(int habitId, int listId, DateTime date)
+    {
+        if (await habitService.ToggleHabitListItemAsync(habitId, listId, date))
+        {
+            await LoadData();
+            restModalHabit = habits.FirstOrDefault(h => h.HabitId == habitId);
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConfirmDeleteHabit(int habitId, string habitName)
+    {
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+    "Delete Habit",
+    $"Are you sure you want to delete '{habitName}'? This cannot be undone.",
+    yesText: "Yes, delete",
+    cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            if (await habitService.DeleteHabitAsync(habitId))
+            {
+                await LoadData();
+                Snackbar.Add($"{habitName} deleted.", Severity.Info);
+            }
+        }
+    }
+
+    private void EditHabit(int habitId) => Navigation.NavigateTo($"/Habits/Edit/{habitId}");
+    private void OpenDetails(int habitId) => Navigation.NavigateTo($"/Habits/Details/{habitId}");
+}
+
+<style>
+    .tiny-datepicker .mud-input-slot {
+        font-size: 0.75rem !important; /* Smaller text */
+        padding: 4px 8px !important;    /* Less internal padding */
+    }
+    .tiny-datepicker .mud-input-control {
+        margin-top: 0px !important;     /* Remove top margin */
+    }
+
+    /*===================INPUT HABT BUMERIC ===============*/
+
+    .habit-input-success {
+    background-color: var(--mud-palette-success) !important;
+    color: var(--mud-palette-dark-text) !important;
+    border-color: var(--mud-palette-success-darken) !important;
+}
+
+.habit-input-error {
+    background-color: var(--mud-palette-error) !important;
+    color: var(--mud-palette-dark-text) !important;
+    border-color: var(--mud-palette-error-darken) !important;
+}
+
+.mud-theme-dark .habit-input-success,
+.mud-theme-dark .habit-input-error {
+    color: #000000 !important;
+}
+
+.mud-theme-light .habit-input-success,
+.mud-theme-light .habit-input-error {
+    color: #ffffff !important;
+}
+
+.habit-input-default {
+    background-color: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    border: 1px solid var(--mud-palette-lines-inputs);
+}
+</style>

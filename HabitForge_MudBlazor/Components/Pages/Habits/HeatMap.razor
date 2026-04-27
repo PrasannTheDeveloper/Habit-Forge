@@ -1,0 +1,1373 @@
+﻿@page "/Habits/HeatMap"
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Services
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inject HabitService habitservice
+
+<style>
+    /* ── Cells ───────────────────────────────────────────── */
+    .heatmap-cell {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        flex-shrink: 0;
+    }
+    .heatmap-cell:hover {
+        transform: scale(1.4);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        z-index: 10;
+        position: relative;
+    }
+    .heatmap-level-0  { background-color: var(--mud-palette-action-disabled-background); }
+    .heatmap-level-1  { background-color: #b2dfdb; }
+    .heatmap-level-2  { background-color: #4db6ac; }
+    .heatmap-level-3  { background-color: #00897b; }
+    .heatmap-level-4  { background-color: #004d40; }
+    .heatmap-level-0-bad { background-color: var(--mud-palette-action-disabled-background); }
+    .heatmap-level-1-bad { background-color: #ffcdd2; }
+    .heatmap-level-2-bad { background-color: #e57373; }
+    .heatmap-level-3-bad { background-color: #c62828; }
+    .heatmap-level-4-bad { background-color: #7f0000; }
+    .heatmap-rest    { background-color: transparent; border: 1px dashed var(--mud-palette-divider); }
+    .heatmap-future  { background-color: transparent; }
+
+    /* Overall heatmap – green only */
+    .overall-level-0 { background-color: var(--mud-palette-action-disabled-background); }
+    .overall-level-1 { background-color: #c8e6c9; }
+    .overall-level-2 { background-color: #81c784; }
+    .overall-level-3 { background-color: #388e3c; }
+    .overall-level-4 { background-color: #1b5e20; }
+
+    /* ── Scroll / grid ───────────────────────────────────── */
+    .month-scroll-container { overflow-x: auto; padding-bottom: 8px; }
+    .month-grid  { display: flex; flex-direction: column; gap: 3px; min-width: fit-content; }
+    .week-row    { display: flex; gap: 3px; align-items: center; }
+    .day-label   { font-size: 10px; width: 28px; text-align: right; padding-right: 4px;
+                   color: var(--mud-palette-text-secondary); flex-shrink: 0; }
+    .month-label { font-size: 11px; font-weight: 600; color: var(--mud-palette-text-secondary);
+                   width: 14px; text-align: center; }
+    .yearly-grid { display: flex; gap: 3px; }
+    .yearly-week-col { display: flex; flex-direction: column; gap: 3px; }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .stat-card { border-radius: 12px; transition: box-shadow 0.2s; }
+    .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+    .legend-dot { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+    .habit-selector-chip { cursor: pointer; }
+
+    /* ── Day-of-week bar ─────────────────────────────────── */
+    .dow-bar-track {
+        height: 8px;
+        border-radius: 4px;
+        background: var(--mud-palette-action-disabled-background);
+        overflow: hidden;
+    }
+    .dow-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Milestone badge ─────────────────────────────────── */
+    .milestone-badge {
+        border-radius: 12px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--mud-palette-action-hover);
+        transition: background 0.2s;
+    }
+    .milestone-badge:hover { background: var(--mud-palette-action-default-hover); }
+
+    /* ── Tab panel spacing ───────────────────────────────── */
+    .tab-content-panel { padding-top: 16px; }
+
+    /* ── Overall calendar cell ───────────────────────────── */
+    .overall-cal-cell {
+        width: 36px; height: 36px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        flex-direction: column; cursor: default;
+        transition: transform 0.15s;
+        position: relative;
+    }
+    .overall-cal-cell:hover { transform: scale(1.1); z-index: 5; position: relative; }
+</style>
+
+
+@* ── TOP CONTROL BAR ─────────────────────────────────────────────────────── *@
+<MudPaper Elevation="4" Class="pa-3 mb-4 rounded-lg">
+    <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudDatePicker Label="@(YearlyAnalysis ? "Select Year" : "Select Month")"
+                           Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Date="selectedDate" DateChanged="OnDateChanged"
+                           DateFormat="@(YearlyAnalysis ? "yyyy" : "MMM yyyy")" />
+            <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary">
+                <MudButton StartIcon="@Icons.Material.Filled.ChevronLeft" OnClick="GoToPrevious">Prev</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Today" OnClick="GoToToday">Today</MudButton>
+                <MudButton EndIcon="@Icons.Material.Filled.ChevronRight" OnClick="GoToNext">Next</MudButton>
+            </MudButtonGroup>
+        </MudStack>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudToggleGroup T="bool" Value="YearlyAnalysis" ValueChanged="OnPeriodToggleChanged"
+                            SelectionMode="SelectionMode.SingleSelection"
+                            Color="Color.Primary" CheckMark="false" Outlined="true">
+                <MudToggleItem Value="false" Text="Monthly" />
+                <MudToggleItem Value="true" Text="Yearly" />
+            </MudToggleGroup>
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@if (isLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+}
+
+@* ── MAIN TABS ────────────────────────────────────────────────────────────── *@
+<MudTabs Elevation="3" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-0" Class="mb-4">
+
+    @* ═══════════════════════════════════════════════════════════════════════
+       TAB 1 – SINGLE HABIT
+       ═══════════════════════════════════════════════════════════════════════ *@
+    <MudTabPanel Text="Single Habit" Icon="@Icons.Material.Filled.Person">
+        <div class="tab-content-panel">
+
+            @* Habit selector *@
+            @if (allHabits.Any())
+            {
+                <MudPaper Elevation="1" Class="pa-3 mb-4 rounded-3">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Select Habit</MudText>
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+                        @foreach (var habit in allHabits)
+                        {
+                            <MudChip T="string"
+                                     Color="@(selectedHabitId == habit.HabitId ? (habit.IsGoodHabit ? Color.Primary : Color.Error) : Color.Default)"
+                                     Variant="@(selectedHabitId == habit.HabitId ? Variant.Filled : Variant.Outlined)"
+                                     Size="Size.Small"
+                                     OnClick="@(() => SelectHabit(habit.HabitId))"
+                                     Class="habit-selector-chip">
+                                @habit.Name
+                            </MudChip>
+                        }
+                    </MudStack>
+                </MudPaper>
+            }
+
+            @if (selectedHabit != null)
+            {
+                @* ── STATS ROW ─────────────────────────────────────────────── *@
+                <MudGrid Spacing="3" Class="mb-4">
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5" Color="Color.Primary">@selectedHabit.CurrentStreak</MudText>
+                            <MudText Typo="Typo.caption">Current Streak 🔥</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5" Color="Color.Secondary">@selectedHabit.BestStreak</MudText>
+                            <MudText Typo="Typo.caption">Best Streak ⭐</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5" Color="Color.Success">@selectedHabit.ConsistencyRate%</MudText>
+                            <MudText Typo="Typo.caption">Consistency</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5">@selectedHabit.CurrentRank</MudText>
+                            <MudText Typo="Typo.caption">Current Rank 🏅</MudText>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+                <MudGrid Spacing="3">
+
+                    @* ── HEATMAP (left, wider) ────────────────────────────── *@
+                    <MudItem xs="12" md="8">
+                        <MudPaper Elevation="2" Class="pa-4 rounded-3" Style="height:100%;">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                                <MudText Typo="Typo.h6">
+                                    @(YearlyAnalysis
+                                        ? $"{selectedDate?.Year} Activity"
+                                        : $"{selectedDate?.ToString("MMMM yyyy")} Activity")
+                                </MudText>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudText Typo="Typo.caption">Less</MudText>
+                                    @for (int i = 0; i <= 4; i++)
+                                    {
+                                        var level = i;
+                                        <span class="legend-dot @GetCellClass(level, selectedHabit.IsGoodHabit)"></span>
+                                    }
+                                    <MudText Typo="Typo.caption">More</MudText>
+                                </MudStack>
+                            </MudStack>
+
+                            @if (YearlyAnalysis)
+                            {
+                                @* YEARLY *@
+                                <div class="month-scroll-container">
+                                    <MudStack Row="true" Spacing="0" Class="mb-1" Style="padding-left: 32px;">
+                                        @foreach (var (monthName, weeks) in monthWeekCounts)
+                                        {
+                                            <div style="display:flex;gap:3px;">
+                                                <div style="width:@(weeks*17)px;font-size:11px;font-weight:600;color:var(--mud-palette-text-secondary);overflow:hidden;white-space:nowrap;">
+                                                    @monthName
+                                                </div>
+                                            </div>
+                                        }
+                                    </MudStack>
+                                    <div style="display:flex;gap:0;">
+                                        <div style="display:flex;flex-direction:column;gap:3px;padding-right:4px;">
+                                            <div style="height:14px;"></div>
+                                            @foreach (var day in new[] { "Mon","","Wed","","Fri","","Sun" })
+                                            {
+                                                <div class="day-label">@day</div>
+                                            }
+                                        </div>
+                                        <div class="yearly-grid">
+                                            @foreach (var week in yearlyWeeks)
+                                            {
+                                                <div class="yearly-week-col">
+                                                    @for (int d = 0; d < 7; d++)
+                                                    {
+                                                        var dayIndex = d;
+                                                        if (dayIndex < week.Count)
+                                                        {
+                                                            var cell = week[dayIndex];
+                                                            <div class="heatmap-cell @GetCellClass(cell.Level, selectedHabit.IsGoodHabit) @(cell.IsRest ? "heatmap-rest" : "") @(cell.IsFuture ? "heatmap-future" : "")"
+                                                                 title="@cell.Tooltip"></div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div style="width:14px;height:14px;"></div>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <MudDivider Class="my-3" />
+                                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="4">
+                                    <MudText Typo="Typo.body2"><strong>@yearlyCompletions</strong> completions in @selectedDate?.Year</MudText>
+                                    <MudText Typo="Typo.body2"><strong>@yearlyRestDays</strong> rest days</MudText>
+                                    <MudText Typo="Typo.body2"><strong>@yearlyMissed</strong> missed days</MudText>
+                                </MudStack>
+                                @* ── YEARLY MONTHLY BREAKDOWN (below grid, yearly mode only) ── *@
+                @if (YearlyAnalysis)
+                {
+                    <MudPaper Elevation="2" Class="pa-4 rounded-3 mt-4">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.DateRange"  Size="Size.Small" />
+                            <MudText Typo="Typo.subtitle1">Monthly Breakdown — @selectedDate?.Year</MudText>
+                        </MudStack>
+                        <MudGrid Spacing="2">
+                            @foreach (var mo in yearlyMonthBreakdown)
+                            {
+                                var pct = mo.Required > 0 ? (double)mo.Done / mo.Required * 100 : 0;
+                                var isFuture = mo.IsFuture;
+                                <MudItem xs="6" sm="4" md="2">
+                                    <MudPaper Outlined="true" Class="pa-2 rounded-2 text-center" Style="@(isFuture ? "opacity:0.45;" : "")">
+                                        <MudText Typo="Typo.caption" >@mo.Label</MudText>
+                                        <MudText Typo="Typo.h6" Color="@(isFuture ? Color.Default : pct >= 80 ? Color.Success : pct >= 50 ? Color.Warning : Color.Error)">
+                                            @(isFuture ? "—" : pct.ToString("F0") + "%")
+                                        </MudText>
+                                        <MudProgressLinear Value="@(isFuture ? 0 : pct)"
+                                                           Color="@(pct >= 80 ? Color.Success : pct >= 50 ? Color.Warning : Color.Error)"
+                                                           Rounded="true" Size="Size.Small" Class="mt-1" />
+                                        <MudText Typo="Typo.caption">@(isFuture ? "" : $"{mo.Done}/{mo.Required}")</MudText>
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudPaper>
+                }
+                            }
+                            else
+                            {
+                                @* MONTHLY calendar *@
+                                <div class="month-scroll-container">
+                                    <div style="display:grid;grid-template-columns:repeat(7,36px);gap:4px;margin-bottom:6px;">
+                                        @foreach (var d in new[] { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" })
+                                        {
+                                            <div style="text-align:center;font-size:11px;font-weight:600;color:var(--mud-palette-text-secondary);">@d</div>
+                                        }
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:repeat(7,36px);gap:4px;">
+                                        @foreach (var cell in monthlyCalendarCells)
+                                        {
+                                            if (cell == null)
+                                            {
+                                                <div></div>
+                                            }
+                                            else
+                                            {
+                                                <MudTooltip Text="@cell.Tooltip" Arrow="true">
+                                                    <div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;transition:transform 0.15s;position:relative;@GetMonthCellBackground(cell)">
+                                                        <span style="font-size:12px;font-weight:600;@GetMonthCellTextColor(cell)">@cell.Date.Day</span>
+                                                        @if (cell.IsCompleted) { <span style="font-size:8px;">✓</span> }
+                                                        @if (cell.IsRest)      { <span style="font-size:8px;">💤</span> }
+                                                    </div>
+                                                </MudTooltip>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+
+                                <MudDivider Class="my-3" />
+
+                                @* Summary chips row *@
+                                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-4">
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled" Icon="@Icons.Material.Filled.CheckCircle">
+                                        @monthlyCompletions / @monthlyRequired done
+                                    </MudChip>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Hotel">
+                                        @monthlyRestDays rest days
+                                    </MudChip>
+                                    @if (monthlyMissed > 0)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" Icon="@Icons.Material.Filled.Cancel">
+                                            @monthlyMissed missed
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Star">
+                                            Perfect month!
+                                        </MudChip>
+                                    }
+                                </MudStack>
+
+                                @* Completion rate progress *@
+                                @if (selectedHabit != null){
+                                    var monthRate = monthlyRequired > 0 ? (double)monthlyCompletions / monthlyRequired * 100 : 0;
+                                    var rateColor = monthRate >= 80 ? Color.Success : monthRate >= 50 ? Color.Warning : Color.Error;
+                                    var rateLabel = monthRate >= 80 ? "Great work! 🔥" : monthRate >= 50 ? "Keep pushing 💪" : "Needs attention ⚠️";
+                                
+                                <MudStack Spacing="1" Class="mb-4">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.caption" >Monthly Completion Rate</MudText>
+                                        <MudText Typo="Typo.caption" Color="@rateColor"><strong>@(monthRate.ToString("F0"))%</strong> — @rateLabel</MudText>
+                                    </MudStack>
+                                    <MudProgressLinear Value="@monthRate" Color="@rateColor" Rounded="true" Size="Size.Medium" />
+                                </MudStack>
+                                }
+                                @* Weekly breakdown mini table *@
+                                <MudText Typo="Typo.caption"  Class="mb-2" Style="font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Week by Week</MudText>
+                                <MudGrid Spacing="2">
+                                    @foreach (var week in monthlyWeekBreakdown)
+                                    {
+                                        var wpct = week.Required > 0 ? (double)week.Done / week.Required * 100 : 0;
+                                        var wColor = wpct >= 80 ? Color.Success : wpct >= 50 ? Color.Warning : Color.Error;
+                                        <MudItem xs="6">
+                                            <div style="display:flex;align-items:center;gap:8px;">
+                                                <MudText Typo="Typo.caption" Style="width:46px;flex-shrink:0;" >@week.Label</MudText>
+                                                <div class="dow-bar-track" style="flex:1;">
+                                                    <div class="dow-bar-fill" style="width:@(wpct.ToString("F0"))%;background:@(wpct >= 80 ? "#00897b" : wpct >= 50 ? "#f9a825" : "#c62828");"></div>
+                                                </div>
+                                                <MudText Typo="Typo.caption" Style="width:30px;text-align:right;">@(wpct.ToString("F0"))%</MudText>
+                                            </div>
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+
+                                @* Remaining days forecast *@
+                                @if (selectedHabit != null)
+                                {
+                                    var remainingDays = monthlyCalendarCells
+                                        .Where(c => c != null && c!.IsFuture && !selectedHabit!.IsRestDay(c.Date))
+                                        .Count();
+                                    var projectedTotal = monthlyCompletions + remainingDays;
+                                    var projectedRate = (monthlyCompletions + remainingDays) > 0 && monthlyRequired + remainingDays > 0
+                                        ? (double)projectedTotal / (monthlyRequired + remainingDays) * 100 : 0;
+
+                                    @if (remainingDays > 0)
+                                    {
+                                        <MudDivider Class="my-3" />
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-1">
+                                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Color="Color.Info" />
+                                            <MudText Typo="Typo.caption"  Style="font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Forecast (if you don't miss)</MudText>
+                                        </MudStack>
+                                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="3">
+                                            <MudText Typo="Typo.body2"><strong>@remainingDays</strong> days left</MudText>
+                                            <MudText Typo="Typo.body2">Projected: <strong>@(projectedRate.ToString("F0"))%</strong></MudText>
+                                        </MudStack>
+                                    }
+                                }
+                            }
+                        </MudPaper>
+                    </MudItem>
+
+                    @* ── RIGHT COLUMN ─────────────────────────────────────── *@
+                    <MudItem xs="12" md="4">
+                        <MudStack Spacing="3">
+
+                            @* Day-of-week performance *@
+                            <MudPaper Elevation="2" Class="pa-4 rounded-3">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.CalendarViewWeek" Color="Color.Info" Size="Size.Small" />
+                                    <MudText Typo="Typo.subtitle1">Best Days of Week</MudText>
+                                </MudStack>
+                                @{
+                                    var days = new[] { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" };
+                                    var maxRate = dowRates.Values.Any() ? dowRates.Values.Max() : 1.0;
+                                }
+                                @foreach (var (dayName, idx) in days.Select((n,i) => (n, i)))
+                                {
+                                    var rate = dowRates.TryGetValue(idx, out var r) ? r : 0.0;
+                                    var pct  = maxRate > 0 ? rate / maxRate * 100 : 0;
+                                    var color = rate >= 80 ? "#00897b" : rate >= 50 ? "#4db6ac" : "#b2dfdb";
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                                        <MudText Typo="Typo.caption" Style="width:28px;">@dayName</MudText>
+                                        <div class="dow-bar-track" style="flex:1;">
+                                            <div class="dow-bar-fill" style="width:@(pct.ToString("F0"))%;background:@color;"></div>
+                                        </div>
+                                        <MudText Typo="Typo.caption" Style="width:36px;text-align:right;">@(rate.ToString("F0"))%</MudText>
+                                    </MudStack>
+                                }
+                            </MudPaper>
+
+                            @* Milestones *@
+                            <MudPaper Elevation="2" Class="pa-4 rounded-3">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" Color="Color.Warning" Size="Size.Small" />
+                                    <MudText Typo="Typo.subtitle1">Milestones</MudText>
+                                </MudStack>
+                                @if (!milestones.Any())
+                                {
+                                    <MudText Typo="Typo.caption" >Complete the habit to earn milestones!</MudText>
+                                }
+                                @foreach (var m in milestones)
+                                {
+                                    <div class="milestone-badge mb-2">
+                                        <span style="font-size:20px;">@m.Icon</span>
+                                        <div>
+                                            <MudText Typo="Typo.body2"><strong>@m.Label</strong></MudText>
+                                            <MudText Typo="Typo.caption" >@m.Description</MudText>
+                                        </div>
+                                        @if (m.Achieved)
+                                        {
+                                            <MudSpacer />
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">✓</MudChip>
+                                        }
+                                    </div>
+                                }
+                            </MudPaper>
+
+                            @* Habit meta *@
+                            <MudPaper Elevation="2" Class="pa-4 rounded-3">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Tertiary" Size="Size.Small" />
+                                    <MudText Typo="Typo.subtitle1">Habit Info</MudText>
+                                </MudStack>
+                                <MudDivider Class="mb-2" />
+                                <MudStack Spacing="1">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.caption" >Type</MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">@selectedHabit.HabitType</MudChip>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.caption" >Goal</MudText>
+                                        <MudText Typo="Typo.caption">@FormatGoal()</MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.caption" >Kind</MudText>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(selectedHabit.IsGoodHabit ? Color.Success : Color.Error)"
+                                                 Variant="Variant.Outlined">
+                                            @(selectedHabit.IsGoodHabit ? "Good Habit" : "Bad Habit")
+                                        </MudChip>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.caption" >Rest days/wk</MudText>
+                                        <MudText Typo="Typo.caption">@(selectedHabit.WeeklyRestDays.Any() ? string.Join(", ", selectedHabit.WeeklyRestDays.Select(d => d.ToString()[..3])) : "None")</MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.caption" >Total entries</MudText>
+                                        <MudText Typo="Typo.caption">@(selectedHabit.HabitEntries?.Count ?? 0)</MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.caption" >Beast rank</MudText>
+                                        <MudText Typo="Typo.caption">@(selectedHabit.BeastRank ?? "Dormant")</MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudPaper>
+
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+
+                
+            }
+            else if (!isLoading && allHabits.Any())
+            {
+                <MudAlert Severity="Severity.Info">Select a habit above to view its heatmap.</MudAlert>
+            }
+            else if (!isLoading)
+            {
+                <MudAlert Severity="Severity.Warning">No habits found. Create some habits first!</MudAlert>
+            }
+        </div>
+    </MudTabPanel>
+
+    @* ═══════════════════════════════════════════════════════════════════════
+       TAB 2 – ALL HABITS OVERVIEW
+       ═══════════════════════════════════════════════════════════════════════ *@
+    <MudTabPanel Text="All Habits Overview" Icon="@Icons.Material.Filled.GridView">
+        <div class="tab-content-panel">
+
+            @if (!allHabits.Any())
+            {
+                <MudAlert Severity="Severity.Warning">No habits found. Create some habits first!</MudAlert>
+            }
+            else
+            {
+                @* ── OVERALL SUMMARY STATS ─────────────────────────────── *@
+                <MudGrid Spacing="3" Class="mb-4">
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5" Color="Color.Success">@overallTotalCompletions</MudText>
+                            <MudText Typo="Typo.caption">Total Completions</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5" Color="Color.Primary">@overallActiveDays</MudText>
+                            <MudText Typo="Typo.caption">Active Days</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5" Color="Color.Warning">@overallPerfectDays</MudText>
+                            <MudText Typo="Typo.caption">Perfect Days 🌟</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudPaper Elevation="2" Class="pa-3 stat-card text-center">
+                            <MudText Typo="Typo.h5" Color="Color.Secondary">@(overallAvgPerDay.ToString("F1"))</MudText>
+                            <MudText Typo="Typo.caption">Avg Habits/Day</MudText>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+                @* ── COMBINED HEATMAP ──────────────────────────────────── *@
+                <MudPaper Elevation="2" Class="pa-4 rounded-3 mb-4">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.GridOn" Color="Color.Success" Size="Size.Small" />
+                            <MudText Typo="Typo.h6">
+                                @(YearlyAnalysis
+                                    ? $"Combined Activity — {selectedDate?.Year}"
+                                    : $"Combined Activity — {selectedDate?.ToString("MMMM yyyy")}")
+                            </MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.caption">None</MudText>
+                            @for (int i = 0; i <= 4; i++)
+                            {
+                                <span class="legend-dot overall-level-@i"></span>
+                            }
+                            <MudText Typo="Typo.caption">All</MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    @if (YearlyAnalysis)
+                    {
+                        @* YEARLY combined – GitHub style *@
+                        <div class="month-scroll-container">
+                            <MudStack Row="true" Spacing="0" Class="mb-1" Style="padding-left: 32px;">
+                                @foreach (var (monthName, weeks) in overallMonthWeekCounts)
+                                {
+                                    <div style="display:flex;gap:3px;">
+                                        <div style="width:@(weeks*17)px;font-size:11px;font-weight:600;color:var(--mud-palette-text-secondary);overflow:hidden;white-space:nowrap;">
+                                            @monthName
+                                        </div>
+                                    </div>
+                                }
+                            </MudStack>
+                            <div style="display:flex;gap:0;">
+                                <div style="display:flex;flex-direction:column;gap:3px;padding-right:4px;">
+                                    <div style="height:14px;"></div>
+                                    @foreach (var day in new[] { "Mon","","Wed","","Fri","","Sun" })
+                                    {
+                                        <div class="day-label">@day</div>
+                                    }
+                                </div>
+                                <div class="yearly-grid">
+                                    @foreach (var week in overallYearlyWeeks)
+                                    {
+                                        <div class="yearly-week-col">
+                                            @for (int d = 0; d < 7; d++)
+                                            {
+                                                var di = d;
+                                                if (di < week.Count)
+                                                {
+                                                    var cell = week[di];
+                                                    <div class="heatmap-cell overall-level-@cell.Level @(cell.IsFuture ? "heatmap-future" : "")"
+                                                         title="@cell.Tooltip"></div>
+                                                }
+                                                else
+                                                {
+                                                    <div style="width:14px;height:14px;"></div>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <MudDivider Class="my-3" />
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="4">
+                            <MudText Typo="Typo.body2"><strong>@overallYearlyCompletions</strong> total completions in @selectedDate?.Year</MudText>
+                            <MudText Typo="Typo.body2"><strong>@overallYearlyPerfect</strong> perfect days (all habits done)</MudText>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        @* MONTHLY combined – calendar style *@
+                        <div class="month-scroll-container">
+                            <div style="display:grid;grid-template-columns:repeat(7,44px);gap:4px;margin-bottom:6px;">
+                                @foreach (var d in new[] { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" })
+                                {
+                                    <div style="text-align:center;font-size:11px;font-weight:600;color:var(--mud-palette-text-secondary);">@d</div>
+                                }
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(7,44px);gap:4px;">
+                                @foreach (var cell in overallMonthCells)
+                                {
+                                    if (cell == null)
+                                    {
+                                        <div></div>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="@cell.Tooltip" Arrow="true">
+                                            <div class="overall-cal-cell" style="@GetOverallCalCellBg(cell)">
+                                                <span style="font-size:12px;font-weight:700;@GetOverallCalTextColor(cell)">@cell.Date.Day</span>
+                                                @if (!cell.IsFuture && cell.CompletedCount > 0)
+                                                {
+                                                    <span style="font-size:8px;color:inherit;">@cell.CompletedCount/@cell.TotalHabits</span>
+                                                }
+                                            </div>
+                                        </MudTooltip>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <MudDivider Class="my-3" />
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="4">
+                            <MudText Typo="Typo.body2"><strong>@overallMonthCompletions</strong> total habit completions</MudText>
+                            <MudText Typo="Typo.body2"><strong>@overallMonthPerfect</strong> perfect days</MudText>
+                        </MudStack>
+                    }
+                </MudPaper>
+
+                @* ── PER-HABIT MINI HEATMAPS ───────────────────────────── *@
+                <MudPaper Elevation="2" Class="pa-4 rounded-3">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.ViewList" Color="Color.Info" Size="Size.Small" />
+                        <MudText Typo="Typo.subtitle1">
+                            Per-Habit @(YearlyAnalysis ? "Yearly" : "Monthly") Snapshot
+                        </MudText>
+                    </MudStack>
+                    <MudGrid Spacing="3">
+                        @foreach (var row in habitMiniRows)
+                        {
+                            <MudItem xs="12" sm="6" lg="4">
+                                <MudPaper Outlined="true" Class="pa-3 rounded-2">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+                                        <MudText Typo="Typo.body2" Style="font-weight:600;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                            @row.Name
+                                        </MudText>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(row.Rate >= 80 ? Color.Success : row.Rate >= 50 ? Color.Warning : Color.Error)"
+                                                 Variant="Variant.Filled">
+                                            @(row.Rate.ToString("F0"))%
+                                        </MudChip>
+                                    </MudStack>
+                                    @* Mini strip heatmap *@
+                                    <div style="display:flex;gap:2px;flex-wrap:wrap;">
+                                        @foreach (var lvl in row.MiniLevels)
+                                        {
+                                            <div style="width:10px;height:10px;border-radius:2px;background:@GetMiniColor(lvl, row.IsGood);flex-shrink:0;"></div>
+                                        }
+                                    </div>
+                                    <MudStack Row="true" Spacing="2" Class="mt-2">
+                                        <MudText Typo="Typo.caption">🔥 @row.Streak streak</MudText>
+                                        <MudText Typo="Typo.caption" >✓ @row.Done/@row.Required</MudText>
+                                    </MudStack>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudPaper>
+            }
+        </div>
+    </MudTabPanel>
+
+</MudTabs>
+
+
+@code {
+    // ── State ──────────────────────────────────────────────────────────────
+    private bool YearlyAnalysis = false;
+    private DateTime? selectedDate = DateTime.Today;
+    private int selectedHabitId = 0;
+    private Habit? selectedHabit;
+    private List<Habit> allHabits = new();
+    private bool isLoading = false;
+
+    // ── Single-habit yearly ────────────────────────────────────────────────
+    private List<List<HeatCell>> yearlyWeeks = new();
+    private List<(string Name, int Weeks)> monthWeekCounts = new();
+    private int yearlyCompletions, yearlyRestDays, yearlyMissed;
+
+    // ── Single-habit monthly ───────────────────────────────────────────────
+    private List<HeatCell?> monthlyCalendarCells = new();
+    private int monthlyCompletions, monthlyRequired, monthlyRestDays, monthlyMissed;
+
+    // ── Day-of-week ────────────────────────────────────────────────────────
+    private Dictionary<int, double> dowRates = new();
+
+    // ── Milestones ─────────────────────────────────────────────────────────
+    private List<Milestone> milestones = new();
+
+    // ── Period breakdowns ──────────────────────────────────────────────────
+    private List<PeriodRow> monthlyWeekBreakdown = new();
+    private List<PeriodRow> yearlyMonthBreakdown = new();
+
+    // ── Overall heatmap ────────────────────────────────────────────────────
+    private List<List<OverallCell>> overallYearlyWeeks = new();
+    private List<(string Name, int Weeks)> overallMonthWeekCounts = new();
+    private int overallYearlyCompletions, overallYearlyPerfect;
+    private List<OverallCell?> overallMonthCells = new();
+    private int overallMonthCompletions, overallMonthPerfect;
+
+    // ── Overall stats ──────────────────────────────────────────────────────
+    private int overallTotalCompletions, overallActiveDays, overallPerfectDays;
+    private double overallAvgPerDay;
+
+    // ── Mini rows ──────────────────────────────────────────────────────────
+    private List<MiniRow> habitMiniRows = new();
+
+    // ── Models ─────────────────────────────────────────────────────────────
+    private class HeatCell
+    {
+        public DateTime Date { get; set; }
+        public int Level { get; set; }
+        public bool IsCompleted { get; set; }
+        public bool IsRest { get; set; }
+        public bool IsFuture { get; set; }
+        public string Tooltip { get; set; } = "";
+    }
+
+    private class OverallCell
+    {
+        public DateTime Date { get; set; }
+        public int Level { get; set; }
+        public int CompletedCount { get; set; }
+        public int TotalHabits { get; set; }
+        public bool IsFuture { get; set; }
+        public string Tooltip { get; set; } = "";
+    }
+
+    private class Milestone
+    {
+        public string Icon { get; set; } = "";
+        public string Label { get; set; } = "";
+        public string Description { get; set; } = "";
+        public bool Achieved { get; set; }
+    }
+
+    private class PeriodRow
+    {
+        public string Label { get; set; } = "";
+        public int Done { get; set; }
+        public int Required { get; set; }
+        public bool IsFuture { get; set; }
+    }
+
+    private class MiniRow
+    {
+        public string Name { get; set; } = "";
+        public double Rate { get; set; }
+        public int Streak { get; set; }
+        public int Done { get; set; }
+        public int Required { get; set; }
+        public bool IsGood { get; set; } = true;
+        public List<int> MiniLevels { get; set; } = new();
+    }
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        allHabits = await habitservice.GetAllHabitAsync();
+        if (allHabits.Any())
+        {
+            selectedHabitId = allHabits.First().HabitId;
+            await LoadSelectedHabit();
+        }
+        BuildOverallHeatmap();
+        BuildOverallStats();
+        BuildHabitMiniRows();
+        isLoading = false;
+    }
+
+    // ── Habit selection ────────────────────────────────────────────────────
+    private async Task SelectHabit(int habitId)
+    {
+        selectedHabitId = habitId;
+        await LoadSelectedHabit();
+    }
+
+    private async Task LoadSelectedHabit()
+    {
+        selectedHabit = await habitservice.GetHabitbyIdAsync(selectedHabitId);
+        if (selectedHabit == null) return;
+        await RefreshHeatmap();
+    }
+
+    private async Task OnPeriodToggleChanged(bool value)
+    {
+        YearlyAnalysis = value;
+        await RefreshHeatmap();
+        BuildOverallHeatmap();
+        BuildHabitMiniRows();
+    }
+
+    private async Task OnDateChanged(DateTime? date)
+    {
+        selectedDate = date;
+        await RefreshHeatmap();
+        BuildOverallHeatmap();
+        BuildHabitMiniRows();
+    }
+
+    private async Task GoToPrevious()
+    {
+        selectedDate = YearlyAnalysis ? selectedDate?.AddYears(-1) : selectedDate?.AddMonths(-1);
+        await RefreshHeatmap();
+        BuildOverallHeatmap();
+        BuildHabitMiniRows();
+    }
+
+    private async Task GoToNext()
+    {
+        selectedDate = YearlyAnalysis ? selectedDate?.AddYears(1) : selectedDate?.AddMonths(1);
+        await RefreshHeatmap();
+        BuildOverallHeatmap();
+        BuildHabitMiniRows();
+    }
+
+    private async Task GoToToday()
+    {
+        selectedDate = DateTime.Today;
+        await RefreshHeatmap();
+        BuildOverallHeatmap();
+        BuildHabitMiniRows();
+    }
+
+    private async Task RefreshHeatmap()
+    {
+        if (selectedHabit == null || selectedDate == null) return;
+        isLoading = true;
+        if (YearlyAnalysis)
+        {
+            BuildYearlyHeatmap();
+            BuildYearlyMonthBreakdown();
+        }
+        else
+        {
+            BuildMonthlyCalendar();
+            BuildMonthlyWeekBreakdown();
+        }
+        BuildDowRates();
+        BuildMilestones();
+        isLoading = false;
+        await Task.CompletedTask;
+    }
+
+    // ── YEARLY single habit ────────────────────────────────────────────────
+    private void BuildYearlyHeatmap()
+    {
+        if (selectedHabit == null || selectedDate == null) return;
+        int year = selectedDate.Value.Year;
+        var start = new DateTime(year, 1, 1);
+        var end   = new DateTime(year, 12, 31);
+        var gridStart = start.AddDays(-(int)start.DayOfWeek);
+        var gridEnd   = end.AddDays(6 - (int)end.DayOfWeek);
+        var entryMap  = BuildEntryMap();
+        yearlyWeeks = new(); yearlyCompletions = 0; yearlyRestDays = 0; yearlyMissed = 0;
+        var monthMap = new Dictionary<int, int>();
+        for (var ws = gridStart; ws <= gridEnd; ws = ws.AddDays(7))
+        {
+            var week = new List<HeatCell>();
+            for (int d = 0; d < 7; d++)
+            {
+                var date = ws.AddDays(d);
+                var cell = BuildCell(date, year, entryMap);
+                if (date.Year == year)
+                {
+                    if (!monthMap.ContainsKey(date.Month)) monthMap[date.Month] = 0;
+                    monthMap[date.Month]++;
+                    if (cell.IsCompleted) yearlyCompletions++;
+                    if (cell.IsRest)      yearlyRestDays++;
+                    if (!cell.IsRest && !cell.IsFuture && !cell.IsCompleted && date < DateTime.Today)
+                        yearlyMissed++;
+                }
+                week.Add(cell);
+            }
+            yearlyWeeks.Add(week);
+        }
+        monthWeekCounts = monthMap.OrderBy(kv => kv.Key)
+            .Select(kv => (new DateTime(year, kv.Key, 1).ToString("MMM"), kv.Value)).ToList();
+    }
+
+    // ── MONTHLY single habit ───────────────────────────────────────────────
+    private void BuildMonthlyCalendar()
+    {
+        if (selectedHabit == null || selectedDate == null) return;
+        int year = selectedDate.Value.Year, month = selectedDate.Value.Month;
+        var firstDay    = new DateTime(year, month, 1);
+        int daysInMonth = DateTime.DaysInMonth(year, month);
+        int startDow    = (int)firstDay.DayOfWeek;
+        var entryMap    = BuildEntryMap();
+        monthlyCalendarCells = new();
+        monthlyCompletions = 0; monthlyRequired = 0; monthlyRestDays = 0; monthlyMissed = 0;
+        for (int i = 0; i < startDow; i++) monthlyCalendarCells.Add(null);
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateTime(year, month, day);
+            var cell = BuildCell(date, year, entryMap, forMonth: true);
+            monthlyCalendarCells.Add(cell);
+            if (!cell.IsFuture)
+            {
+                if (cell.IsRest) monthlyRestDays++;
+                else { monthlyRequired++; if (cell.IsCompleted) monthlyCompletions++; else if (date < DateTime.Today) monthlyMissed++; }
+            }
+        }
+    }
+
+    // ── DOW rates ──────────────────────────────────────────────────────────
+    private void BuildDowRates()
+    {
+        dowRates = new Dictionary<int, double>();
+        if (selectedHabit?.HabitEntries == null) return;
+        var map = selectedHabit.HabitEntries
+            .GroupBy(e => e.Date.Date)
+            .ToDictionary(g => g.Key, g => g.Any(e => e.IsCompleted));
+        for (int dow = 0; dow < 7; dow++)
+        {
+            var required = new List<bool>();
+            foreach (var kv in map)
+            {
+                if ((int)kv.Key.DayOfWeek == dow && !selectedHabit.IsRestDay(kv.Key) && kv.Key < DateTime.Today)
+                    required.Add(kv.Value);
+            }
+            dowRates[dow] = required.Any() ? required.Count(x => x) / (double)required.Count * 100 : 0;
+        }
+    }
+
+    // ── Milestones ─────────────────────────────────────────────────────────
+    private void BuildMilestones()
+    {
+        milestones = new();
+        if (selectedHabit == null) return;
+        var streak = selectedHabit.CurrentStreak;
+        var best   = selectedHabit.BestStreak;
+        var total  = selectedHabit.HabitEntries?.Count(e => e.IsCompleted) ?? 0;
+        milestones.Add(new Milestone { Icon="🌱", Label="First Step",     Description="Complete the habit once",       Achieved = total >= 1 });
+        milestones.Add(new Milestone { Icon="🔥", Label="Week Warrior",   Description="7-day streak",                  Achieved = best >= 7 });
+        milestones.Add(new Milestone { Icon="💎", Label="Fortnight",      Description="14-day streak",                 Achieved = best >= 14 });
+        milestones.Add(new Milestone { Icon="🏆", Label="Month Master",   Description="30-day streak",                 Achieved = best >= 30 });
+        milestones.Add(new Milestone { Icon="⚡", Label="50 Completions", Description="50 total completions",          Achieved = total >= 50 });
+        milestones.Add(new Milestone { Icon="🚀", Label="Century",        Description="100 total completions",         Achieved = total >= 100 });
+        milestones.Add(new Milestone { Icon="👑", Label="Unbreakable",    Description="150-day streak",                Achieved = best >= 150 });
+    }
+
+    // ── Weekly breakdown (monthly view) ────────────────────────────────────
+    private void BuildMonthlyWeekBreakdown()
+    {
+        monthlyWeekBreakdown = new();
+        if (selectedHabit == null || selectedDate == null) return;
+        int year = selectedDate.Value.Year, month = selectedDate.Value.Month;
+        int daysInMonth = DateTime.DaysInMonth(year, month);
+        var entryMap = BuildEntryMap();
+        int week = 1;
+        for (int startDay = 1; startDay <= daysInMonth; startDay += 7)
+        {
+            int endDay = Math.Min(startDay + 6, daysInMonth);
+            int done = 0, req = 0;
+            for (int d = startDay; d <= endDay; d++)
+            {
+                var dt = new DateTime(year, month, d);
+                if (dt > DateTime.Today) continue;
+                if (selectedHabit.IsRestDay(dt)) continue;
+                req++;
+                entryMap.TryGetValue(dt, out var entry);
+                if (entry?.IsCompleted == true) done++;
+            }
+            monthlyWeekBreakdown.Add(new PeriodRow { Label = $"Week {week}", Done = done, Required = req });
+            week++;
+        }
+    }
+
+    // ── Monthly breakdown (yearly view) ────────────────────────────────────
+    private void BuildYearlyMonthBreakdown()
+    {
+        yearlyMonthBreakdown = new();
+        if (selectedHabit == null || selectedDate == null) return;
+        int year = selectedDate.Value.Year;
+        var entryMap = BuildEntryMap();
+        var monthNames = new[] { "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
+        for (int m = 1; m <= 12; m++)
+        {
+            int daysInMonth = DateTime.DaysInMonth(year, m);
+            var firstOfMonth = new DateTime(year, m, 1);
+            bool isFuture = firstOfMonth > DateTime.Today;
+            int done = 0, req = 0;
+            for (int d = 1; d <= daysInMonth; d++)
+            {
+                var dt = new DateTime(year, m, d);
+                if (dt > DateTime.Today) continue;
+                if (selectedHabit.IsRestDay(dt)) continue;
+                req++;
+                entryMap.TryGetValue(dt, out var entry);
+                if (entry?.IsCompleted == true) done++;
+            }
+            yearlyMonthBreakdown.Add(new PeriodRow { Label = monthNames[m-1], Done = done, Required = req, IsFuture = isFuture });
+        }
+    }
+
+    // ── OVERALL heatmap ────────────────────────────────────────────────────
+    private void BuildOverallHeatmap()
+    {
+        if (!allHabits.Any() || selectedDate == null) return;
+        // Build lookup: date -> # habits completed that day
+        var completedByDate = new Dictionary<DateTime, int>();
+        int activeCount = allHabits.Count(h => h.IsActive);
+        foreach (var h in allHabits)
+        {
+            foreach (var e in h.HabitEntries ?? new())
+            {
+                if (!e.IsCompleted) continue;
+                var d = e.Date.Date;
+                completedByDate.TryGetValue(d, out var cnt);
+                completedByDate[d] = cnt + 1;
+            }
+        }
+        int habitCount = Math.Max(allHabits.Count, 1);
+
+        if (YearlyAnalysis)
+            BuildOverallYearly(completedByDate, habitCount);
+        else
+            BuildOverallMonthly(completedByDate, habitCount);
+    }
+
+    private void BuildOverallYearly(Dictionary<DateTime, int> completedByDate, int habitCount)
+    {
+        if (selectedDate == null) return;
+        int year = selectedDate.Value.Year;
+        var start     = new DateTime(year, 1, 1);
+        var end       = new DateTime(year, 12, 31);
+        var gridStart = start.AddDays(-(int)start.DayOfWeek);
+        var gridEnd   = end.AddDays(6 - (int)end.DayOfWeek);
+
+        overallYearlyWeeks = new(); overallYearlyCompletions = 0; overallYearlyPerfect = 0;
+        var monthMap = new Dictionary<int, int>();
+
+        for (var ws = gridStart; ws <= gridEnd; ws = ws.AddDays(7))
+        {
+            var week = new List<OverallCell>();
+            for (int d = 0; d < 7; d++)
+            {
+                var date    = ws.AddDays(d);
+                bool future = date > DateTime.Today;
+                completedByDate.TryGetValue(date.Date, out var cnt);
+                int level = future ? 0 : cnt == 0 ? 0 : cnt >= habitCount ? 4
+                          : cnt >= habitCount * 0.75 ? 3
+                          : cnt >= habitCount * 0.5  ? 2 : 1;
+                var cell = new OverallCell
+                {
+                    Date = date, Level = level, CompletedCount = cnt,
+                    TotalHabits = habitCount, IsFuture = future,
+                    Tooltip = future ? date.ToString("ddd, MMM d")
+                              : $"{date:ddd, MMM d} — {cnt}/{habitCount} habits"
+                };
+                if (date.Year == year)
+                {
+                    if (!monthMap.ContainsKey(date.Month)) monthMap[date.Month] = 0;
+                    monthMap[date.Month]++;
+                    if (!future) { overallYearlyCompletions += cnt; if (cnt >= habitCount && cnt > 0) overallYearlyPerfect++; }
+                }
+                week.Add(cell);
+            }
+            overallYearlyWeeks.Add(week);
+        }
+        overallMonthWeekCounts = monthMap.OrderBy(kv => kv.Key)
+            .Select(kv => (new DateTime(year, kv.Key, 1).ToString("MMM"), kv.Value)).ToList();
+    }
+
+    private void BuildOverallMonthly(Dictionary<DateTime, int> completedByDate, int habitCount)
+    {
+        if (selectedDate == null) return;
+        int year = selectedDate.Value.Year, month = selectedDate.Value.Month;
+        var firstDay    = new DateTime(year, month, 1);
+        int daysInMonth = DateTime.DaysInMonth(year, month);
+        int startDow    = (int)firstDay.DayOfWeek;
+
+        overallMonthCells = new(); overallMonthCompletions = 0; overallMonthPerfect = 0;
+        for (int i = 0; i < startDow; i++) overallMonthCells.Add(null);
+
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date    = new DateTime(year, month, day);
+            bool future = date > DateTime.Today;
+            completedByDate.TryGetValue(date.Date, out var cnt);
+            int level = future ? 0 : cnt == 0 ? 0 : cnt >= habitCount ? 4
+                      : cnt >= habitCount * 0.75 ? 3
+                      : cnt >= habitCount * 0.5  ? 2 : 1;
+            var cell = new OverallCell
+            {
+                Date = date, Level = level, CompletedCount = cnt,
+                TotalHabits = habitCount, IsFuture = future,
+                Tooltip = future ? date.ToString("ddd, MMM d")
+                          : $"{date:ddd, MMM d yyyy} — {cnt}/{habitCount} habits completed"
+            };
+            overallMonthCells.Add(cell);
+            if (!future)
+            {
+                overallMonthCompletions += cnt;
+                if (cnt >= habitCount && cnt > 0) overallMonthPerfect++;
+            }
+        }
+    }
+
+    // ── Overall stats ──────────────────────────────────────────────────────
+    private void BuildOverallStats()
+    {
+        overallTotalCompletions = 0; overallActiveDays = 0; overallPerfectDays = 0;
+        int habitCount = allHabits.Count;
+        var byDate = new Dictionary<DateTime, int>();
+        foreach (var h in allHabits)
+            foreach (var e in h.HabitEntries ?? new())
+            {
+                if (!e.IsCompleted) continue;
+                var d = e.Date.Date;
+                byDate.TryGetValue(d, out var c);
+                byDate[d] = c + 1;
+                overallTotalCompletions++;
+            }
+        overallActiveDays  = byDate.Count(kv => kv.Value > 0 && kv.Key <= DateTime.Today);
+        overallPerfectDays = byDate.Count(kv => kv.Value >= habitCount && habitCount > 0 && kv.Key <= DateTime.Today);
+        overallAvgPerDay   = overallActiveDays > 0 ? (double)overallTotalCompletions / overallActiveDays : 0;
+    }
+
+    // ── Mini rows ──────────────────────────────────────────────────────────
+    private void BuildHabitMiniRows()
+    {
+        habitMiniRows = new();
+        if (selectedDate == null) return;
+        foreach (var h in allHabits)
+        {
+            var entryMap = (h.HabitEntries ?? new())
+                .GroupBy(e => e.Date.Date)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            List<int> levels;
+            int done = 0, req = 0;
+
+            if (YearlyAnalysis)
+            {
+                int year = selectedDate.Value.Year;
+                levels = new();
+                for (int m = 1; m <= 12; m++)
+                {
+                    int dCnt = 0, rCnt = 0;
+                    for (int d = 1; d <= DateTime.DaysInMonth(year, m); d++)
+                    {
+                        var dt = new DateTime(year, m, d);
+                        if (dt > DateTime.Today || h.IsRestDay(dt)) continue;
+                        rCnt++;
+                        entryMap.TryGetValue(dt, out var en);
+                        if (en?.IsCompleted == true) dCnt++;
+                    }
+                    done += dCnt; req += rCnt;
+                    levels.Add(rCnt == 0 ? 0 : dCnt >= rCnt ? 4 : dCnt >= rCnt * 0.75 ? 3 : dCnt >= rCnt * 0.5 ? 2 : dCnt > 0 ? 1 : 0);
+                }
+            }
+            else
+            {
+                int year = selectedDate.Value.Year, month = selectedDate.Value.Month;
+                int days = DateTime.DaysInMonth(year, month);
+                levels = new();
+                for (int d = 1; d <= days; d++)
+                {
+                    var dt = new DateTime(year, month, d);
+                    if (dt > DateTime.Today) { levels.Add(0); continue; }
+                    if (h.IsRestDay(dt)) { levels.Add(-1); continue; }
+                    req++;
+                    entryMap.TryGetValue(dt, out var en);
+                    bool comp = en?.IsCompleted == true;
+                    if (comp) done++;
+                    levels.Add(comp ? (en?.Value >= h.GoalValue ? 4 : 2) : 0);
+                }
+            }
+
+            habitMiniRows.Add(new MiniRow
+            {
+                Name       = h.Name,
+                Rate       = req > 0 ? (double)done / req * 100 : 0,
+                Streak     = h.CurrentStreak,
+                Done       = done,
+                Required   = req,
+                IsGood     = h.IsGoodHabit,
+                MiniLevels = levels
+            });
+        }
+        habitMiniRows = habitMiniRows.OrderByDescending(r => r.Rate).ToList();
+    }
+
+    // ── Cell builder ───────────────────────────────────────────────────────
+    private HeatCell BuildCell(DateTime date, int relevantYear,
+        Dictionary<DateTime, HabitEntry> entryMap, bool forMonth = false)
+    {
+        bool isFuture = date.Date > DateTime.Today;
+        bool isRest   = !isFuture && selectedHabit!.IsRestDay(date);
+        if (isFuture || (date.Year != relevantYear && !forMonth))
+            return new HeatCell { Date = date, Level = 0, IsFuture = true, Tooltip = date.ToString("ddd, MMM d") };
+        if (isRest)
+            return new HeatCell { Date = date, IsRest = true, Tooltip = $"{date:ddd, MMM d} — Rest Day" };
+
+        entryMap.TryGetValue(date.Date, out var entry);
+        bool completed = entry?.IsCompleted ?? false;
+        double value   = entry?.Value ?? 0;
+        int level = 0;
+        if (completed)
+        {
+            level = selectedHabit!.HabitType switch
+            {
+                TypeOfHabit.Checkbox => 4,
+                TypeOfHabit.List     => value >= selectedHabit.GoalValue ? 4
+                                      : value > 0 ? (int)Math.Ceiling(value / selectedHabit.GoalValue * 3) : 0,
+                _ => value >= selectedHabit!.GoalValue ? 4
+                   : value >= selectedHabit.GoalValue * 0.75 ? 3
+                   : value >= selectedHabit.GoalValue * 0.5  ? 2
+                   : value > 0 ? 1 : 0
+            };
+        }
+        else if (value > 0) level = 1;
+
+        var tooltip = $"{date:ddd, MMM d yyyy}";
+        if (isRest)           tooltip += " — Rest";
+        else if (completed)   tooltip += $" ✓ {FormatValue(value)}";
+        else if (date < DateTime.Today) tooltip += " — Missed";
+        else tooltip += " — Today";
+
+        return new HeatCell { Date = date, Level = level, IsCompleted = completed, IsRest = isRest, IsFuture = isFuture, Tooltip = tooltip };
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    private Dictionary<DateTime, HabitEntry> BuildEntryMap() =>
+        (selectedHabit?.HabitEntries ?? new List<HabitEntry>())
+            .GroupBy(e => e.Date.Date)
+            .ToDictionary(g => g.Key, g => g.First());
+
+    private string FormatValue(double value)
+    {
+        if (selectedHabit == null) return "";
+        return selectedHabit.HabitType switch
+        {
+            TypeOfHabit.Checkbox => "Completed",
+            TypeOfHabit.Hours    => $"{value:F1}h / {selectedHabit.GoalValue:F1}h",
+            TypeOfHabit.Percent  => $"{value:F0}% / {selectedHabit.GoalValue:F0}%",
+            TypeOfHabit.Numeric  => $"{value:F1} / {selectedHabit.GoalValue:F1}",
+            TypeOfHabit.List     => $"{(int)value} items done",
+            _                    => value.ToString("F1")
+        };
+    }
+
+    private string FormatGoal()
+    {
+        if (selectedHabit == null) return "";
+        return selectedHabit.HabitType switch
+        {
+            TypeOfHabit.Checkbox => "Complete once",
+            TypeOfHabit.Hours    => $"{selectedHabit.GoalValue:F1} hours",
+            TypeOfHabit.Percent  => $"{selectedHabit.GoalValue:F0}%",
+            TypeOfHabit.Numeric  => $"{selectedHabit.GoalValue:F1} units",
+            TypeOfHabit.List     => $"{(int)selectedHabit.GoalValue} items",
+            _                    => selectedHabit.GoalValue.ToString("F1")
+        };
+    }
+
+    private string GetCellClass(int level, bool isGood) =>
+        isGood ? level switch { 1=>"heatmap-level-1",2=>"heatmap-level-2",3=>"heatmap-level-3",4=>"heatmap-level-4",_=>"heatmap-level-0" }
+               : level switch { 1=>"heatmap-level-1-bad",2=>"heatmap-level-2-bad",3=>"heatmap-level-3-bad",4=>"heatmap-level-4-bad",_=>"heatmap-level-0-bad" };
+
+    private string GetMonthCellTextColor(HeatCell cell)
+    {
+        if (cell.IsCompleted)
+            return selectedHabit!.IsGoodHabit ? "color:#004d40;" : "color:#7f0000;";
+        if (cell.Date.Date == DateTime.Today)
+            return "color:var(--mud-palette-primary);";
+        return "";
+    }
+
+    private string GetMonthCellBackground(HeatCell cell)
+    {
+        if (cell.IsRest) return "background:transparent;border:1px dashed var(--mud-palette-divider);";
+        if (cell.IsFuture) return "background:transparent;opacity:0.3;";
+        if (!cell.IsCompleted && cell.Level == 0)
+        {
+            if (cell.Date.Date == DateTime.Today) return "background:var(--mud-palette-primary-lighten);border:2px solid var(--mud-palette-primary);";
+            if (cell.Date < DateTime.Today) return "background:var(--mud-palette-action-disabled-background);";
+            return "background:transparent;";
+        }
+        if (selectedHabit!.IsGoodHabit)
+            return cell.Level switch { 1=>"background:#b2dfdb;",2=>"background:#4db6ac;",3=>"background:#00897b;",4=>"background:#004d40;color:white;",_=>"" };
+        else
+            return cell.Level switch { 1=>"background:#ffcdd2;",2=>"background:#e57373;",3=>"background:#c62828;",4=>"background:#7f0000;color:white;",_=>"" };
+    }
+
+    private string GetOverallCalCellBg(OverallCell cell)
+    {
+        if (cell.IsFuture) return "background:transparent;opacity:0.3;";
+        if (cell.Date.Date == DateTime.Today)
+            return cell.Level switch
+            {
+                0 => "background:var(--mud-palette-primary-lighten);border:2px solid var(--mud-palette-primary);",
+                _ => $"background:{OverallLevelColor(cell.Level)};border:2px solid var(--mud-palette-primary);"
+            };
+        return $"background:{OverallLevelColor(cell.Level)};";
+    }
+
+    private string GetOverallCalTextColor(OverallCell cell)
+    {
+        if (cell.IsFuture) return "";
+        if (cell.Date.Date == DateTime.Today && cell.Level == 0) return "color:var(--mud-palette-primary);";
+        return cell.Level >= 3 ? "color:white;" : "";
+    }
+
+    private string OverallLevelColor(int level) => level switch
+    {
+        1 => "#c8e6c9", 2 => "#81c784", 3 => "#388e3c", 4 => "#1b5e20",
+        _ => "var(--mud-palette-action-disabled-background)"
+    };
+
+    private string GetMiniColor(int level, bool isGood)
+    {
+        if (level == -1) return "transparent"; // rest
+        if (isGood) return level switch { 1=>"#b2dfdb",2=>"#4db6ac",3=>"#00897b",4=>"#004d40",_=>"var(--mud-palette-action-disabled-background)" };
+        return level switch { 1=>"#ffcdd2",2=>"#e57373",3=>"#c62828",4=>"#7f0000",_=>"var(--mud-palette-action-disabled-background)" };
+    }
+}

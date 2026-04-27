@@ -1,0 +1,312 @@
+﻿@page "/ProgressDiary/Edit/{Id:int}"
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Services
+@using MudBlazor
+@inject ProgressDiaryService DiaryService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+@inject HabitService habitService
+@inject NavbarAsHeaderService NavAsHeader
+
+<MudContainer Class="pa-2">
+
+    @code{
+        protected override async Task OnParametersSetAsync()
+        {
+            await NavAsHeader.SetNavAsHeaderProperties(Icons.Material.Filled.Edit, "Edit Diary Entry", _diary?.CreatedAt.ToString("dddd, MMMM dd yyyy") ?? string.Empty);
+        }
+    }
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+    }
+    else if (_notFound)
+    {
+        <MudAlert Severity="Severity.Error">Entry not found.</MudAlert>
+    }
+    else
+    {
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+
+            @* SECTION 1 — BASICS *@
+            <MudPaper Elevation="3" Class="pa-5 mb-4">
+                <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-1" Style="vertical-align:middle" />
+                    Entry Details
+                </MudText>
+
+                <MudTextField @bind-Value="_diary.Title"
+                              Label="Title"
+                              Placeholder="What's today about?"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              RequiredError="Title is required"
+                              MaxLength="100"
+                              Counter="100"
+                              FullWidth="true"
+                              Class="mb-4" />
+
+                <MudTextField @bind-Value="_diary.Content"
+                              Label="Content"
+                              Placeholder="Write your thoughts, reflections, anything..."
+                              Variant="Variant.Outlined"
+                              Lines="5"
+                              MaxLength="2000"
+                              Counter="2000"
+                              FullWidth="true"
+                              Class="mb-4" />
+
+                <MudTextField @bind-Value="_diary.Tags"
+                              Label="Tags"
+                              Placeholder="e.g. focus, health, morning-routine"
+                              Variant="Variant.Outlined"
+                              FullWidth="true"
+                              HelperText="Comma-separated tags for easy filtering" />
+            </MudPaper>
+
+            @* SECTION 2 — MOOD + SCORE *@
+            <MudPaper Elevation="3" Class="pa-5 mb-4">
+                <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.Mood" Class="mr-1" Style="vertical-align:middle" />
+                    How Was Your Day?
+                </MudText>
+
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6">
+                        <label class="mud-input-label">Mood</label>
+                        <InputSelect @bind-Value="_diary.Mood" class="mud-input-slot mud-input-root mud-input-outlined mud-select forge-select">
+                            @foreach (Moods mood in Enum.GetValues(typeof(Moods)))
+                            {
+                                <option value="@mood">@mood</option>
+                            }
+                        </InputSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.body2">
+                                Productivity Score:
+                                <MudChip T="string" Size="Size.Small" Color="@GetScoreColor(_diary.ProductivityScore)" Class="ml-1">
+                                    @_diary.ProductivityScore / 10
+                                </MudChip>
+                            </MudText>
+                            <MudSlider T="int"
+                                       @bind-Value="_diary.ProductivityScore"
+                                       Min="1"
+                                       Max="10"
+                                       Step="1"
+                                       Color="@GetScoreColor(_diary.ProductivityScore)"
+                                       TickMarks="true" />
+                        </MudStack>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            @* SECTION 3 — WIN + CHALLENGE *@
+            <MudPaper Elevation="3" Class="pa-5 mb-4">
+                <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Class="mr-1" Style="vertical-align:middle" />
+                    Highlights
+                </MudText>
+
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_diary.WinOfDay"
+                                      Label="Win of the Day"
+                                      Placeholder="Something you're proud of today..."
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="true"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.EmojiEvents"
+                                      AdornmentColor="Color.Warning" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_diary.ChallengeOfDay"
+                                      Label="Challenge of the Day"
+                                      Placeholder="Something that was hard or held you back..."
+                                      Variant="Variant.Outlined"
+                                      Lines="3"
+                                      FullWidth="true"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.FitnessCenter"
+                                      AdornmentColor="Color.Error" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            @* SECTION 4 — RELATED HABITS *@
+            @* SECTION 4 — RELATED HABITS *@
+            @* SECTION 4 — RELATED HABITS *@
+            <MudPaper Elevation="3" Class="pa-5 mb-6">
+                <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-1">
+                    <MudIcon Icon="@Icons.Material.Filled.Loop" Class="mr-1" Style="vertical-align:middle" />
+                    Link Habits
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-4">
+                    Which habits did you work on today?
+                </MudText>
+
+                @if (_loadingHabits)
+                {
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                }
+                else if (_habits.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        No active habits found.
+                    </MudAlert>
+                }
+                else
+                {
+                    @* Multi-selection ChipSet *@
+                    <MudChipSet T="int"
+                                AllClosable="false"
+                                SelectionMode="SelectionMode.MultiSelection"
+                                SelectedValues="_selectedHabitIds.ToList()"
+                                SelectedValuesChanged="OnSelectedHabitsChanged"
+                                CheckMark="true">
+                        @foreach (var habit in _habits)
+                        {
+                            <MudChip Value="@habit.HabitId"
+                                     Variant="Variant.Outlined"
+                                     Color="Color.Primary"
+                                     Text="@habit.Name" />
+                        }
+                    </MudChipSet>
+                }
+            </MudPaper>
+
+            @* ACTION BUTTONS *@
+            <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           StartIcon="@Icons.Material.Filled.Cancel"
+                           OnClick="@(() => NavManager.NavigateTo("/ProgressDiary/Index"))">
+                    Cancel
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Disabled="@_saving"
+                           OnClick="HandleSubmit">
+                    @if (_saving)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Update Entry</span>
+                    }
+                </MudButton>
+            </MudStack>
+
+        </MudForm>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private MudForm _form = null!;
+    private ProgressDiary _diary = new();
+    private bool _isValid;
+    private bool _saving;
+    private bool _loading = true;
+    private bool _notFound;
+    private bool _loadingHabits = true;
+
+    private List<Habit> _habits = new();
+    private HashSet<int> _selectedHabitIds = new();
+
+    private void OnSelectedHabitsChanged(IEnumerable<int> selectedIds)
+    {
+        _selectedHabitIds = selectedIds.ToHashSet();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntry();
+        await LoadHabits();
+    }
+
+    private async Task LoadEntry()
+    {
+        _loading = true;
+        try
+        {
+            var entry = await DiaryService.GetProgressDiaryAsync(Id);
+            if (entry is null)
+            {
+                _notFound = true;
+                return;
+            }
+
+            _diary = entry;
+
+            _selectedHabitIds = _diary.RelatedHabits?
+    .Select(h => h.HabitId)
+    .ToHashSet() ?? new HashSet<int>();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task LoadHabits()
+    {
+        _loadingHabits = true;
+        try
+        {
+            _habits = await habitService.GetAllHabitAsync();
+        }
+        finally
+        {
+            _loadingHabits = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        await _form.Validate();
+        if (!_isValid) return;
+
+        _saving = true;
+        try
+        {
+            // Update linked habits from chip selection
+            _diary.RelatedHabits = _habits
+                .Where(h => _selectedHabitIds.Contains(h.HabitId))
+                .ToList();
+
+            _diary.LastUpdatedAt = DateTime.Now;
+
+            var success = await DiaryService.UpdateProgressDiaryAsync(_diary);
+
+            if (success)
+            {
+                Snackbar.Add("Entry updated successfully!", Severity.Success);
+                NavManager.NavigateTo("/ProgressDiary/Index");
+            }
+            else
+            {
+                Snackbar.Add("Failed to update entry. Try again.", Severity.Error);
+            }
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private Color GetScoreColor(int score) => score switch
+    {
+        >= 8 => Color.Success,
+        >= 5 => Color.Warning,
+        _ => Color.Error
+    };
+}

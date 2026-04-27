@@ -1,0 +1,18 @@
+﻿@page "/"
+@using HabitForge_MudBlazor.Models
+@using HabitForge_MudBlazor.Services
+@using System.IO.Pipes
+@using MudBlazor
+@using System.Diagnostics
+@inject SettingsService _settingService
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            NavigationManager.NavigateTo("/Habits/Index");
+        }
+    }
+}
