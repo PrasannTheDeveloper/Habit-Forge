@@ -144,7 +144,7 @@ Search **HabitForge** on the Microsoft Store and install for free.
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** — see the [LICENSE]([LICENSE](https://github.com/PrasannTheDeveloper/Habit-Forge/blob/master/LICENSE.txt)) file for details.
 
 The HabitForge name, logo, and branding are the exclusive property of Prasann Gaikwad and may not be used without permission.
 
