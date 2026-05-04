@@ -25,19 +25,24 @@ HabitForge is a free Windows desktop app that helps you build powerful habits, e
 ## Screenshots
 
 ### Habit Tracker — Index View
-![Habit Index](screenshots/habit-index.png)
+![Habit Index]<img width="1920" height="1006" alt="Screenshot 2026-05-04 215304" src="https://github.com/user-attachments/assets/4a054a0d-9566-4185-b270-4a94d096e35a" />
+
 
 ### Weekly & Monthly Analysis
-![Analysis](screenshots/analysis.png)
+![Analysis]<img width="1357" height="707" alt="Screenshot 2026-05-04 215745" src="https://github.com/user-attachments/assets/bd167f3b-2e00-4745-811d-956049465963" />
+
 
 ### Heatmap
-![Heatmap](screenshots/heatmap.png)
+![Heatmap]<img width="1354" height="709" alt="Screenshot 2026-05-04 215827" src="https://github.com/user-attachments/assets/27c444ae-874f-4ebc-9c44-3de9547d2b0b" />
+
 
 ### Habit Details
-![Habit Details](screenshots/habit-details.png)
+![Habit Details]<img width="1907" height="1006" alt="Screenshot 2026-05-04 220226" src="https://github.com/user-attachments/assets/6a1c41e9-d8fd-43fc-9a2d-2b2ffc19e78f" />
+
 
 ### Backup & Restore
-![Backup and Restore](screenshots/backup-restore.png)
+![Backup and Restore]
+<img width="1356" height="708" alt="image" src="https://github.com/user-attachments/assets/edb2b851-b8fc-4d94-8a25-3753b7824238" />
 
 ---
 
@@ -110,7 +115,7 @@ HabitForge is a free Windows desktop app that helps you build powerful habits, e
 Search **HabitForge** on the Microsoft Store and install for free.
 
 ### Manual Install
-1. Go to [Releases](https://github.com/yourusername/habitforge/releases)
+1. Go to [Releases](https://github.com/prasannthedeveloper/habitforge/releases)
 2. Download the latest `.msix` or setup file
 3. Run the installer
 4. Launch HabitForge and start forging
