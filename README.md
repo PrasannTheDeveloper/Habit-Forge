@@ -115,7 +115,7 @@ HabitForge is a free Windows desktop app that helps you build powerful habits, e
 Search **HabitForge** on the Microsoft Store and install for free.
 
 ### Manual Install
-1. Go to [Releases](https://github.com/prasannthedeveloper/habitforge/releases)
+1. Go to [Releases]([https://github.com/prasannthedeveloper/habitforge/releases](https://github.com/PrasannTheDeveloper/Habit-Forge/releases/tag/habittracker))
 2. Download the latest `.msix` or setup file
 3. Run the installer
 4. Launch HabitForge and start forging
