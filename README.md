@@ -26,23 +26,22 @@ HabitForge is a free Windows desktop app that helps you build powerful habits, e
 ## Screenshots
 
 ### Habit Tracker — Index View
-![Habit Index]<img  height="300" alt="Screenshot 2026-05-04 215304" src="https://github.com/user-attachments/assets/4a054a0d-9566-4185-b270-4a94d096e35a" />
+<img  height="300" alt="Screenshot 2026-05-04 215304" src="https://github.com/user-attachments/assets/4a054a0d-9566-4185-b270-4a94d096e35a" />
 
 
 ### Weekly & Monthly Analysis
-![Analysis]<img height="300" alt="Screenshot 2026-05-04 215745" src="https://github.com/user-attachments/assets/bd167f3b-2e00-4745-811d-956049465963" />
+<img height="300" alt="Screenshot 2026-05-04 215745" src="https://github.com/user-attachments/assets/bd167f3b-2e00-4745-811d-956049465963" />
 
 
 ### Heatmap
-![Heatmap]<img height="300" alt="Screenshot 2026-05-04 215827" src="https://github.com/user-attachments/assets/27c444ae-874f-4ebc-9c44-3de9547d2b0b" />
+<img height="300" alt="Screenshot 2026-05-04 215827" src="https://github.com/user-attachments/assets/27c444ae-874f-4ebc-9c44-3de9547d2b0b" />
 
 
 ### Habit Details
-![Habit Details]<img height="300" alt="Screenshot 2026-05-04 220226" src="https://github.com/user-attachments/assets/6a1c41e9-d8fd-43fc-9a2d-2b2ffc19e78f" />
+<img height="300" alt="Screenshot 2026-05-04 220226" src="https://github.com/user-attachments/assets/6a1c41e9-d8fd-43fc-9a2d-2b2ffc19e78f" />
 
 
 ### Backup & Restore
-![Backup and Restore]
 <img height="300" alt="image" src="https://github.com/user-attachments/assets/edb2b851-b8fc-4d94-8a25-3753b7824238" />
 
 ---
