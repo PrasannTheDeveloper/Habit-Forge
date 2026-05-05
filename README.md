@@ -1,9 +1,10 @@
 <div align="center">
 
-<img src="your-logo-here.png" alt="HabitForge Logo" width="120"/>
+<img width="120" height="452" alt="Logo3" src="https://github.com/user-attachments/assets/171650b0-6df0-4771-a73a-e52b3c476efb" />
 
 # HabitForge
 ### Track. Build. Transform.
+
 
 **A free Windows habit tracking app built for people serious about self improvement.**
 
