@@ -152,7 +152,7 @@ The HabitForge name, logo, and branding are the exclusive property of Prasann Ga
 
 ## Author
 
-**Prasann Gaikwad**
+**Prasannova Solutions**
 © 2026 — All rights reserved
 
 ---
