@@ -132,7 +132,7 @@
     }
 
     .hero-title {
-      font-size: clamp(3.5rem, 9vw, 8rem);
+      font-size: clamp(2rem, 7vw, 6rem);
       color: var(--forge-text);
       line-height: 1;
     }
