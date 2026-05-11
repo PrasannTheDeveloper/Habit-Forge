@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HabitForge – Track. Build. Transform.</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+<link href="/staticFiles/styles.css" rel="stylesheet" />
+
+</head>
+<body>
+
+  <!-- ============================================================
+       NAV
+  ============================================================ -->
+<nav class="hf-nav">
+    <div class="container">
+        <div class="row align-items-center">
+            
+            <div class="col-auto">
+                <a href="#hero"
+                   class="d-flex align-items-center gap-2 text-decoration-none">
+
+                    <img src="images/Logo3.png"
+                         alt="HabitForge icon"
+                         style="height: 40px; width: auto;" />
+
+                    <h2 class="m-0">Habit Forge</h2>
+                </a>
+            </div>
+
+            <div class="col d-none d-lg-flex justify-content-center gap-1">
+                <a class="nav-link-hf" href="#features">Features</a>
+                <a class="nav-link-hf" href="#ranks">Ranks</a>
+                <a class="nav-link-hf" href="#habit-types">Habit Types</a>
+                <a class="nav-link-hf" href="#download">Download</a>
+                <a class="nav-link-hf" href="#opensource">Open Source</a>
+            </div>
+
+            <div class="col-auto">
+                <a href="https://apps.microsoft.com/detail/9NFV4D7M2XWF"
+                   target="_blank"
+                   class="btn-forge btn-primary-forge">
+                    <i class="bi bi-windows"></i> Get the App
+                </a>
+            </div>
+
+        </div>
+    </div>
+</nav>
+
+  <!-- ============================================================
+       HERO
+  ============================================================ -->
+  <section class="hero-section" id="hero">
+    <div class="container">
+      <div class="row align-items-center gy-5">
+
+        <!-- Left copy -->
+        <div class="col-lg-5">
+          <div class="hero-badge">🔥 Free &amp; Open Source · Windows App</div>
+          <h1 class="hero-title">FORGE YOUR<br><span class="accent">HABITS.</span><br>BUILD YOUR<br>LIFE.</h1>
+          <p class="hero-subtitle">
+            HabitForge turns your daily routines into a ranked progression system — from a flickering Spark to the Unbreakable legend you're becoming.
+          </p>
+
+          <div class="d-flex flex-wrap gap-3 mt-4">
+            <a href="https://apps.microsoft.com/detail/9NFV4D7M2XWF" target="_blank" class="btn-forge btn-primary-forge">
+              <i class="bi bi-bag-check-fill"></i> Microsoft Store
+            </a>
+            <a href="https://sourceforge.net/projects/habit-forge/" target="_blank" class="btn-forge btn-secondary-forge">
+              <i class="bi bi-download"></i> SourceForge
+            </a>
+            <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="btn-forge btn-secondary-forge">
+              <i class="bi bi-github"></i> GitHub
+            </a>
+          </div>
+
+          <!-- Hero stats -->
+          <div class="hero-stats">
+            <div class="row g-4">
+              <div class="col-auto">
+                <div class="stat-value">15</div>
+                <div class="stat-label">Rank Tiers</div>
+              </div>
+              <div class="col-auto">
+                <div class="stat-value">5</div>
+                <div class="stat-label">Habit Types</div>
+              </div>
+              <div class="col-auto">
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Free Forever</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right screenshot -->
+        <div class="col-lg-7">
+          <img
+            src="images/WeeklyScreenshot.png"
+            alt="HabitForge weekly view screenshot"
+            class="hero-screenshot w-100"
+          />
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-sep" />
+
+  <!-- ============================================================
+       RANK SYSTEM
+  ============================================================ -->
+  <section class="ranks-section" id="ranks">
+    <div class="container">
+      <div class="row mb-5">
+        <div class="col-lg-6">
+          <span class="section-eyebrow">🏅 Progression System</span>
+          <h2 class="section-title">EARN YOUR<br><span class="orange">RANK</span></h2>
+          <div class="section-divider"></div>
+          <p class="hero-subtitle">
+            Every streak day moves you up the forge ladder. Miss too many and you drop back. Consistency is the only currency that matters.
+          </p>
+        </div>
+      </div>
+
+        <!-- Rank grid -->
+<div class="row g-3">
+  <!-- Row 1 - entry -->
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Spark.png" alt="Spark" class="rank-image">
+      </div>
+      <div class="rank-name">Spark</div>
+      <div class="rank-streak">1–2 days</div>
+      <div class="streak-bar mt-2" style="width:7%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Ember.png" alt="Ember" class="rank-image">
+      </div>
+      <div class="rank-name">Ember</div>
+      <div class="rank-streak">3–6 days</div>
+      <div class="streak-bar mt-2" style="width:20%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Molten.png" alt="Molten" class="rank-image">
+      </div>
+      <div class="rank-name">Molten</div>
+      <div class="rank-streak">7–9 days</div>
+      <div class="streak-bar mt-2" style="width:47%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Warming.png" alt="Warming" class="rank-image">
+      </div>
+      <div class="rank-name">Warming</div>
+      <div class="rank-streak">10–13 days</div>
+      <div class="streak-bar mt-2" style="width:67%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Forming.png" alt="Forming" class="rank-image">
+      </div>
+      <div class="rank-name">Forming</div>
+      <div class="rank-streak">14–20 days</div>
+      <div class="streak-bar mt-2" style="width:93%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Stable.png" alt="Stable" class="rank-image">
+      </div>
+      <div class="rank-name">Stable</div>
+      <div class="rank-streak">21–29 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+
+  <!-- Row 2 - mid -->
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Solid.png" alt="Solid" class="rank-image">
+      </div>
+      <div class="rank-name">Solid</div>
+      <div class="rank-streak">30–39 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Shaped.png" alt="Shaped" class="rank-image">
+      </div>
+      <div class="rank-name">Shaped</div>
+      <div class="rank-streak">40–49 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Forged.png" alt="Forged" class="rank-image">
+      </div>
+      <div class="rank-name">Forged</div>
+      <div class="rank-streak">50–64 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Hardened.png" alt="Hardened" class="rank-image">
+      </div>
+      <div class="rank-name">Hardened</div>
+      <div class="rank-streak">65–79 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Refined.png" alt="Refined" class="rank-image">
+      </div>
+      <div class="rank-name">Refined</div>
+      <div class="rank-streak">80–94 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Tempered.png" alt="Tempered" class="rank-image">
+      </div>
+      <div class="rank-name">Tempered</div>
+      <div class="rank-streak">95–109 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+
+  <!-- Row 3 - elite -->
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Mythic.png" alt="Mythic" class="rank-image">
+      </div>
+      <div class="rank-name">Mythic</div>
+      <div class="rank-streak">110–129 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Legendary.png" alt="Legendary" class="rank-image">
+      </div>
+      <div class="rank-name">Legendary</div>
+      <div class="rank-streak">130–149 days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+  <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+    <div class="rank-card">
+      <div class="rank-icon">
+        <img src="images/Ranks/Unbreakable.png" alt="Unbreakable" class="rank-image">
+      </div>
+      <div class="rank-name">Unbreakable</div>
+      <div class="rank-streak">150+ days</div>
+      <div class="streak-bar mt-2" style="width:100%"></div>
+    </div>
+  </div>
+</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-sep" />
+
+  <!-- ============================================================
+       FEATURES
+  ============================================================ -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="row mb-5">
+        <div class="col-lg-5">
+          <span class="section-eyebrow">⚙️ What's Inside</span>
+          <h2 class="section-title">BUILT FOR<br><span class="teal">REAL GROWTH</span></h2>
+          <div class="section-divider" style="background: linear-gradient(90deg, var(--forge-teal), transparent);"></div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">📅</div>
+            <div class="feature-title">Weekly Grid View</div>
+            <p class="feature-desc">See all your habits across the week at a glance. Track completions, values, and rest days in a clean, dense grid.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">🔥</div>
+            <div class="feature-title">Streak Tracking</div>
+            <p class="feature-desc">Current and best streaks per habit. Rest days don't break your streak — they're part of your strategy.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-title">Consistency Rate</div>
+            <p class="feature-desc">An honest score: required days minus missed days, expressed as a percentage. No fluff, just your real performance.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">🗺️</div>
+            <div class="feature-title">Heat Map</div>
+            <p class="feature-desc">GitHub-style activity heatmap lets you spot patterns, slumps, and winning streaks at a bird's-eye view.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">📓</div>
+            <div class="feature-title">Growth Journal</div>
+            <p class="feature-desc">Log your wins, challenges, moods, and productivity scores. Link journal entries directly to specific habits.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <div class="feature-title">Google Drive Backup</div>
+            <p class="feature-desc">One-click backup and restore via Google Drive. Your data, stored in your own account — always under your control.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">🏷️</div>
+            <div class="feature-title">Categories</div>
+            <p class="feature-desc">Organise habits into custom categories. Health, Career, Learning, Mindfulness — you define the structure.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">😴</div>
+            <div class="feature-title">Rest Day Planning</div>
+            <p class="feature-desc">Set weekly rest days or specific dates per habit. Recovery is part of the forge — not a failure of it.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-title">Google Sign-in</div>
+            <p class="feature-desc">Secure, frictionless authentication with your Google account. Your data stays local in AppData — no cloud lock-in.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-sep" />
+
+  <!-- ============================================================
+       HABIT TYPES
+  ============================================================ -->
+  <section class="types-section" id="habit-types">
+    <div class="container">
+      <div class="row align-items-center gy-5">
+        <div class="col-lg-5">
+          <span class="section-eyebrow">📋 Habit Types</span>
+          <h2 class="section-title">TRACK IT<br><span class="amber">YOUR WAY</span></h2>
+          <div class="section-divider" style="background: linear-gradient(90deg, var(--forge-amber), transparent);"></div>
+          <p class="text-muted mb-4" style="color: gray !important;">
+            Not every habit is a simple yes/no. HabitForge supports five tracking modes so every habit fits naturally.
+          </p>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="type-pill"><i class="bi bi-check2-square"></i> Checkbox</span>
+            <span class="type-pill"><i class="bi bi-123"></i> Numeric</span>
+            <span class="type-pill"><i class="bi bi-clock"></i> Hours</span>
+            <span class="type-pill"><i class="bi bi-percent"></i> Percent</span>
+            <span class="type-pill"><i class="bi bi-list-check"></i> Checklist</span>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-check2-square"></i></div>
+                <div class="feature-title">Checkbox</div>
+                <p class="feature-desc">Simple did-it-or-not. Perfect for binary habits like meditation, journaling, or cold showers.</p>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-123"></i></div>
+                <div class="feature-title">Numeric</div>
+                <p class="feature-desc">Log a number — glasses of water, push-ups, pages read. Set a goal and track progress daily.</p>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-clock"></i></div>
+                <div class="feature-title">Hours</div>
+                <p class="feature-desc">Track time spent. Ideal for deep work, study sessions, or sleep tracking.</p>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-list-check"></i></div>
+                <div class="feature-title">Checklist</div>
+                <p class="feature-desc">Define sub-tasks for a habit and mark each one. Great for morning routines or workout circuits.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-sep" />
+
+  <!-- ============================================================
+       DOWNLOAD
+  ============================================================ -->
+  <section class="download-section" id="download">
+    <div class="container">
+      <div class="row justify-content-center mb-5">
+        <div class="col-lg-7 text-center">
+          <span class="section-eyebrow">⬇️ Get HabitForge</span>
+          <h2 class="section-title">DOWNLOAD<br><span class="orange">FOR FREE</span></h2>
+          <div class="section-divider mx-auto"></div>
+          <p class="text-muted" style="color: gray !important;">Windows only. No subscription. No ads. No nonsense.</p>
+        </div>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+        <!-- MS Store -->
+        <div class="col-md-5">
+          <div class="download-card text-center">
+            <div class="fs-1 mb-3"><i class="bi bi-windows" style="color: var(--forge-teal);"></i></div>
+            <div class="download-platform">Available on</div>
+            <div class="download-name mb-2">Microsoft Store</div>
+            <div class="d-flex gap-2 justify-content-center mb-3">
+              <span class="download-badge badge-free">Free</span>
+              <span class="download-badge badge-os">Windows 10/11</span>
+            </div>
+            <p class="feature-desc mb-4">Verified, auto-updating, sandboxed. The smoothest installation experience.</p>
+            <a href="https://apps.microsoft.com/detail/9NFV4D7M2XWF" target="_blank" class="btn-forge btn-primary-forge w-100 justify-content-center">
+              <i class="bi bi-bag-check-fill"></i> Get on MS Store
+            </a>
+          </div>
+        </div>
+
+        <!-- SourceForge -->
+        <div class="col-md-5">
+          <div class="download-card text-center">
+            <div class="fs-1 mb-3" style="color: var(--forge-amber);">
+                <img src="images/sourceforgeLogo.jpg" alt="SourceForge icon" style="height: 1.5em; width: auto;" />
+            </div>
+            <div class="download-platform">Also available on</div>
+            <div class="download-name mb-2">SourceForge</div>
+            <div class="d-flex gap-2 justify-content-center mb-3">
+              <span class="download-badge badge-free">Free</span>
+              <span class="download-badge badge-os">Open Source</span>
+            </div>
+            <p class="feature-desc mb-4">Direct installer download. No Microsoft account required to install.</p><br>
+            <a href="https://sourceforge.net/projects/habit-forge/" target="_blank" class="btn-forge btn-primary-forge w-100 justify-content-center">
+              <i class="bi bi-download"></i> Download from SourceForge
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- System req note -->
+      <div class="row justify-content-center mt-4">
+        <div class="col-lg-6">
+          <div class="text-center" style="color: var(--forge-muted); font-size: .85rem; font-family: var(--font-cond); letter-spacing: .08em;">
+            <i class="bi bi-info-circle me-1"></i>
+            Windows 10 or later · .NET MAUI · Local SQLite database · No internet required to use
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-sep" />
+
+  <!-- ============================================================
+       OPEN SOURCE
+  ============================================================ -->
+  <section class="oss-section" id="opensource">
+    <div class="container">
+      <div class="row align-items-center gy-4">
+        <div class="col-lg-7">
+          <span class="section-eyebrow">🐙 Open Source</span>
+          <h2 class="section-title">BUILT IN THE<br><span class="teal">OPEN</span></h2>
+          <div class="section-divider" style="background: linear-gradient(90deg, var(--forge-teal), transparent);"></div>
+          <p class="text-muted mb-4" style="color: gray !important;">
+            HabitForge is fully open source — built with .NET MAUI Blazor Hybrid and MudBlazor. Fork it, contribute, or just poke around the code. Every line is yours to inspect.
+          </p>
+          <div class="d-flex flex-wrap gap-3">
+            <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="btn-forge btn-secondary-forge">
+              <i class="bi bi-github"></i> View on GitHub
+            </a>
+            <a href="https://github.com/PrasannTheDeveloper/Habit-Forge/issues" target="_blank" class="btn-forge btn-secondary-forge">
+              <i class="bi bi-bug"></i> Report an Issue
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="feature-card">
+            <div class="row g-3 text-center">
+              <div class="col-6">
+                <div class="stat-value">MAUI</div>
+                <div class="stat-label">Framework</div>
+              </div>
+              <div class="col-6">
+                <div class="stat-value">Blazor</div>
+                <div class="stat-label">UI Engine</div>
+              </div>
+              <div class="col-6">
+                <div class="stat-value">MudBlazor</div>
+                <div class="stat-label">Component Library</div>
+              </div>
+              <div class="col-6">
+                <div class="stat-value">SQLite</div>
+                <div class="stat-label">Local Database</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-sep" />
+
+  <!-- ============================================================
+       SUPPORT / KO-FI
+  ============================================================ -->
+  <section style="padding: 80px 0; background: var(--forge-black);" id="support">
+    <div class="container">
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-6">
+          <div style="font-size: 2.5rem; margin-bottom: 1rem;">☕</div>
+          <span class="section-eyebrow">Support the Dev</span>
+          <h2 class="section-title">KEEP THE<br><span class="amber">FORGE BURNING</span></h2>
+          <div class="section-divider mx-auto" style="background: linear-gradient(90deg, var(--forge-amber), transparent);"></div>
+          <p class="text-muted mb-4" style="color: gray !important;">
+            HabitForge is free and always will be. If it's helped you build better habits, consider buying me a coffee to keep the development going.
+          </p>
+          <a href="https://ko-fi.com/prasannova_solutions" target="_blank" class="btn-forge btn-primary-forge">
+            ☕ Buy Me a Coffee on Ko-fi
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="section-sep" />
+
+  <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="row align-items-center gy-4">
+
+        <!-- Brand -->
+        <!-- Brand -->
+<div class="col-lg-4">
+
+    <div class="d-flex align-items-center gap-2 mb-2">
+
+        <img src="images/Logo3.png"
+             alt="HabitForge icon"
+             style="height: 36px; width: auto;" />
+
+        <h5 class="m-0">Habit Forge</h5>
+
+    </div>
+
+    <div class="hf-tagline-nav mb-3">
+        Track · Build · Transform
+    </div>
+
+    <p style="color: var(--forge-muted); font-size: .85rem;">
+        A free, open-source habit tracker for Windows.<br>
+        Built with .NET MAUI Blazor Hybrid + MudBlazor.
+    </p>
+
+    <div style="
+        color: var(--forge-muted);
+        font-size: .78rem;
+        font-family: var(--font-cond);
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        margin-top: .75rem;">
+        
+        A product of
+        <span style="color: var(--forge-amber);">
+            Prasannova Solutions
+        </span>
+
+    </div>
+
+</div>
+
+        <!-- Links -->
+        <div class="col-lg-4">
+          <div class="row g-2">
+            <div class="col-6">
+              <a href="https://apps.microsoft.com/detail/9NFV4D7M2XWF" target="_blank" class="footer-link d-block mb-2">Microsoft Store</a>
+              <a href="https://sourceforge.net/projects/habit-forge/" target="_blank" class="footer-link d-block mb-2">SourceForge</a>
+              <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="footer-link d-block mb-2">GitHub</a>
+            </div>
+            <div class="col-6">
+              <a href="/PrivacyPolicy.html" class="footer-link d-block mb-2">Privacy Policy</a>
+              <a href="/TermsOfService.html" class="footer-link d-block mb-2">Terms of Service</a>
+              <a href="https://ko-fi.com/prasannova_solutions" target="_blank" class="footer-link d-block mb-2">Support on Ko-fi</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social -->
+        <div class="col-lg-4">
+          <div class="d-flex flex-wrap gap-2 justify-content-lg-end mb-2">
+            <a href="https://instagram.com" target="_blank" class="social-icon" title="Instagram">
+              <i class="bi bi-instagram"></i>
+            </a>
+            <a href="https://linkedin.com" target="_blank" class="social-icon" title="LinkedIn">
+              <i class="bi bi-linkedin"></i>
+            </a>
+            <a href="https://x.com" target="_blank" class="social-icon" title="X / Twitter">
+              <i class="bi bi-twitter-x"></i>
+            </a>
+            <a href="https://ko-fi.com" target="_blank" class="social-icon" title="Ko-fi" style="font-size:.95rem;">☕</a>
+            <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="social-icon" title="GitHub">
+              <i class="bi bi-github"></i>
+            </a>
+          </div>
+          <div class="text-lg-end" style="color: var(--forge-muted); font-size: .8rem; font-family: var(--font-cond); letter-spacing: .1em;">
+            Made with 🔥 by Prasann
+          </div>
+        </div>
+
+      </div>
+
+      <hr style="border-color: var(--forge-border); margin: 1.5rem 0;" />
+
+      <div class="row">
+        <div class="col text-center" style="color: var(--forge-muted); font-size: .78rem; font-family: var(--font-cond); letter-spacing: .1em;">
+          © 2026 Prasannova Solutions · HabitForge · Open Source · Windows Only · Free Forever
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

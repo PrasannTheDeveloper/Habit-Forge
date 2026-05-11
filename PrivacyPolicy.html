@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy – HabitForge · Prasannova Solutions</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+<link href="/staticFiles/styles.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      --forge-black:  #0a0a0f;
+      --forge-dark:   #11111a;
+      --forge-panel:  #181824;
+      --forge-border: #2a2a3a;
+      --forge-orange: #ff6b1a;
+      --forge-amber:  #ffb020;
+      --forge-teal:   #00d4aa;
+      --forge-text:   #e8e8f0;
+      --forge-muted:  #8888a8;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body:    'Barlow', sans-serif;
+      --font-cond:    'Barlow Condensed', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--forge-black);
+      color: var(--forge-text);
+      font-family: var(--font-body);
+      font-weight: 400;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--forge-orange); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; }
+
+    /* ── NAV ──────────────────────────────── */
+    .hf-nav {
+      position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+      background: rgba(10,10,15,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--forge-border);
+      padding: .75rem 0;
+    }
+    .nav-back {
+      font-family: var(--font-cond);
+      font-size: .85rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--forge-muted);
+      display: inline-flex; align-items: center; gap: .4rem;
+      transition: color .2s;
+      text-decoration: none;
+    }
+    .nav-back:hover { color: var(--forge-orange); text-decoration: none; }
+
+    /* ── HERO BANNER ──────────────────────── */
+    .policy-hero {
+      padding-top: 110px;
+      padding-bottom: 60px;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 100%, rgba(255,107,26,.08) 0%, transparent 70%),
+        var(--forge-black);
+      border-bottom: 1px solid var(--forge-border);
+    }
+    .policy-eyebrow {
+      font-family: var(--font-cond);
+      font-size: .78rem;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      color: var(--forge-orange);
+      margin-bottom: .6rem;
+      display: block;
+    }
+    .policy-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      line-height: 1;
+      letter-spacing: .04em;
+    }
+    .policy-meta {
+      font-family: var(--font-cond);
+      font-size: .82rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--forge-muted);
+      margin-top: 1rem;
+    }
+    .policy-meta span { color: var(--forge-amber); }
+
+    /* ── LAYOUT ───────────────────────────── */
+    .policy-wrap { padding: 60px 0 100px; }
+
+    .toc-sidebar {
+      position: sticky;
+      top: 90px;
+      background: var(--forge-panel);
+      border: 1px solid var(--forge-border);
+      border-radius: 4px;
+      padding: 1.5rem;
+    }
+    .toc-heading {
+      font-family: var(--font-cond);
+      font-size: .72rem;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: var(--forge-muted);
+      margin-bottom: 1rem;
+      padding-bottom: .5rem;
+      border-bottom: 1px solid var(--forge-border);
+    }
+    .toc-list { list-style: none; padding: 0; margin: 0; }
+    .toc-list li { margin-bottom: .3rem; }
+    .toc-list a {
+      font-family: var(--font-cond);
+      font-size: .88rem;
+      letter-spacing: .06em;
+      color: var(--forge-muted);
+      display: flex; align-items: flex-start; gap: .4rem;
+      transition: color .2s;
+      text-decoration: none;
+    }
+    .toc-list a:hover { color: var(--forge-orange); }
+    .toc-num {
+      color: var(--forge-border);
+      font-size: .75rem;
+      min-width: 18px;
+      padding-top: 1px;
+    }
+
+    /* ── CONTENT ──────────────────────────── */
+    .policy-section {
+      margin-bottom: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--forge-border);
+    }
+    .policy-section:last-child { border-bottom: none; }
+
+    .section-number {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      color: var(--forge-border);
+      line-height: 1;
+      margin-bottom: -.2rem;
+    }
+    .section-heading {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      letter-spacing: .04em;
+      color: var(--forge-text);
+      margin-bottom: 1rem;
+    }
+    .section-heading .accent { color: var(--forge-orange); }
+
+    .policy-body p {
+      color: #b0b0c8;
+      margin-bottom: .9rem;
+      font-size: .97rem;
+    }
+    .policy-body ul {
+      list-style: none;
+      padding: 0;
+      margin: .5rem 0 1rem;
+    }
+    .policy-body ul li {
+      color: #b0b0c8;
+      font-size: .97rem;
+      padding: .3rem 0 .3rem 1.4rem;
+      position: relative;
+    }
+    .policy-body ul li::before {
+      content: '—';
+      position: absolute; left: 0;
+      color: var(--forge-orange);
+      font-weight: 700;
+    }
+
+    .callout {
+      background: var(--forge-panel);
+      border-left: 3px solid var(--forge-orange);
+      border-radius: 0 4px 4px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+    }
+    .callout.teal  { border-color: var(--forge-teal); }
+    .callout.amber { border-color: var(--forge-amber); }
+    .callout p { margin: 0; font-size: .92rem; color: var(--forge-muted); }
+    .callout strong { color: var(--forge-text); }
+
+    /* ── FOOTER ───────────────────────────── */
+    .footer {
+      background: var(--forge-dark);
+      border-top: 1px solid var(--forge-border);
+      padding: 2.5rem 0;
+    }
+    .footer-link {
+      font-family: var(--font-cond);
+      font-size: .82rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--forge-muted);
+      transition: color .2s;
+      text-decoration: none;
+    }
+    .footer-link:hover { color: var(--forge-orange); }
+    .hf-tagline-nav {
+      font-family: var(--font-cond);
+      font-size: .72rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--forge-muted);
+    }
+    .social-icon {
+      width: 36px; height: 36px;
+      border: 1px solid var(--forge-border);
+      border-radius: 3px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      color: var(--forge-muted);
+      transition: all .2s;
+      text-decoration: none;
+    }
+    .social-icon:hover { border-color: var(--forge-orange); color: var(--forge-orange); }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="hf-nav">
+    <div class="container">
+      <div class="row align-items-center">
+            
+            <div class="col-auto">
+                <a href="#hero"
+                   class="d-flex align-items-center gap-2 text-decoration-none">
+
+                    <img src="images/Logo3.png"
+                         alt="HabitForge icon"
+                         style="height: 40px; width: auto;" />
+
+                    <h2 class="m-0" style="color: var(--forge-text);">Habit Forge</h2>
+                </a>
+            </div>
+
+            <div class="col d-none d-lg-flex justify-content-center gap-1">
+                <a class="nav-link-hf" href="#features">Features</a>
+                <a class="nav-link-hf" href="#ranks">Ranks</a>
+                <a class="nav-link-hf" href="#habit-types">Habit Types</a>
+                <a class="nav-link-hf" href="#download">Download</a>
+                <a class="nav-link-hf" href="#opensource">Open Source</a>
+            </div>
+
+            <div class="col-auto">
+                <a href="https://apps.microsoft.com/detail/9NFV4D7M2XWF"
+                   target="_blank"
+                   class="btn-forge btn-primary-forge">
+                    <i class="bi bi-windows"></i> Get the App
+                </a>
+            </div>
+
+        </div>
+    </div>
+  </nav>
+
+  <!-- HERO BANNER -->
+  <div class="policy-hero">
+    <div class="container">
+      <span class="policy-eyebrow">Legal · Prasannova Solutions</span>
+      <h1 class="policy-title">PRIVACY<br><span style="color:var(--forge-orange);">POLICY</span></h1>
+      <div class="policy-meta">
+        Effective Date: <span>May 9, 2026</span> &nbsp;·&nbsp;
+        Last Updated: <span>May 9, 2026</span> &nbsp;·&nbsp;
+        App: <span>HabitForge</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="policy-wrap">
+    <div class="container">
+      <div class="row gx-5 gy-4">
+
+        <!-- SIDEBAR TOC -->
+        <div class="col-lg-3 d-none d-lg-block">
+          <div class="toc-sidebar">
+            <div class="toc-heading">Contents</div>
+            <ul class="toc-list">
+              <li><a href="#s1"><span class="toc-num">01</span>Overview</a></li>
+              <li><a href="#s2"><span class="toc-num">02</span>Data We Collect</a></li>
+              <li><a href="#s3"><span class="toc-num">03</span>Local Storage</a></li>
+              <li><a href="#s4"><span class="toc-num">04</span>Google Sign-In</a></li>
+              <li><a href="#s5"><span class="toc-num">05</span>Google Drive Backup</a></li>
+              <li><a href="#s6"><span class="toc-num">06</span>Data We Do NOT Collect</a></li>
+              <li><a href="#s7"><span class="toc-num">07</span>Third-Party Services</a></li>
+              <li><a href="#s8"><span class="toc-num">08</span>Children's Privacy</a></li>
+              <li><a href="#s9"><span class="toc-num">09</span>Data Deletion</a></li>
+              <li><a href="#s10"><span class="toc-num">10</span>Changes to Policy</a></li>
+              <li><a href="#s11"><span class="toc-num">11</span>Contact Us</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="col-lg-9">
+
+          <!-- 01 -->
+          <div class="policy-section" id="s1">
+            <div class="section-number">01</div>
+            <h2 class="section-heading">Overview</h2>
+            <div class="policy-body">
+              <p>HabitForge is developed and maintained by <strong>Prasannova Solutions</strong>. We built HabitForge to help you track habits, build consistency, and transform your daily life — not to collect, sell, or monetise your personal data.</p>
+              <p>This Privacy Policy explains what information HabitForge handles, where it is stored, and how it is used. By installing or using HabitForge, you agree to the practices described here.</p>
+              <div class="callout teal">
+                <p><strong>Short version:</strong> Your habit data lives on your device. We don't have a server that stores it. We don't sell anything.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 02 -->
+          <div class="policy-section" id="s2">
+            <div class="section-number">02</div>
+            <h2 class="section-heading">Data We <span class="accent">Collect</span></h2>
+            <div class="policy-body">
+              <p>HabitForge may handle the following types of data depending on the features you use:</p>
+              <ul>
+                <li><strong>Habit data</strong> — names, descriptions, types, goal values, streaks, completion entries, categories, and rest day settings you create inside the app.</li>
+                <li><strong>Journal entries</strong> — titles, content, moods, productivity scores, challenge/win notes, and tags you write in the Growth Journal.</li>
+                <li><strong>Google account identity</strong> — your name and email address obtained via Google Sign-In, used only to identify your session within the app.</li>
+                <li><strong>Backup files</strong> — a copy of your local database uploaded to your own Google Drive if you use the Backup &amp; Restore feature.</li>
+              </ul>
+              <p>No other data is collected.</p>
+            </div>
+          </div>
+
+          <!-- 03 -->
+          <div class="policy-section" id="s3">
+            <div class="section-number">03</div>
+            <h2 class="section-heading">Local <span class="accent">Storage</span></h2>
+            <div class="policy-body">
+              <p>All habit data, journal entries, categories, and settings are stored in a <strong>SQLite database</strong> inside your Windows user profile directory:</p>
+              <div class="callout amber">
+                <p><strong>Path:</strong> <code style="color:var(--forge-amber);">%AppData%\HabitForge\</code></p>
+              </div>
+              <p>This data never leaves your device unless you explicitly use the Google Drive backup feature. Prasannova Solutions has no access to this database, cannot read it, and cannot delete it on your behalf.</p>
+              <p>Uninstalling HabitForge does not automatically delete AppData files. You can delete the folder manually to remove all local data.</p>
+            </div>
+          </div>
+
+          <!-- 04 -->
+          <div class="policy-section" id="s4">
+            <div class="section-number">04</div>
+            <h2 class="section-heading">Google <span class="accent">Sign-In</span></h2>
+            <div class="policy-body">
+              <p>HabitForge uses Google OAuth 2.0 to let you sign in with your Google account. When you sign in, Google shares your <strong>name</strong> and <strong>email address</strong> with the app. This information is:</p>
+              <ul>
+                <li>Stored locally on your device only.</li>
+                <li>Used to display your profile within the app.</li>
+                <li>Used to associate your Google Drive backup with your account.</li>
+                <li>Never transmitted to Prasannova Solutions' servers (we don't have one).</li>
+              </ul>
+              <p>Your Google credentials and tokens are managed by the Google Identity platform. We do not store your password. Refer to <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a> for details.</p>
+            </div>
+          </div>
+
+          <!-- 05 -->
+          <div class="policy-section" id="s5">
+            <div class="section-number">05</div>
+            <h2 class="section-heading">Google Drive <span class="accent">Backup</span></h2>
+            <div class="policy-body">
+              <p>The optional Backup &amp; Restore feature uploads a copy of your local database to <strong>your own Google Drive account</strong>:</p>
+              <ul>
+                <li>The backup file is stored in your personal Google Drive — not on any Prasannova Solutions server.</li>
+                <li>Only you (and Google, per their policies) have access to this file.</li>
+                <li>We request only the minimum Drive scope needed to read and write the backup file.</li>
+                <li>You can delete the backup file from your Google Drive at any time.</li>
+              </ul>
+              <div class="callout">
+                <p><strong>Scope used:</strong> <code style="color:var(--forge-orange);">https://www.googleapis.com/auth/drive.file</code> — limits access to only files created by HabitForge; it cannot read other files in your Drive.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 06 -->
+          <div class="policy-section" id="s6">
+            <div class="section-number">06</div>
+            <h2 class="section-heading">Data We Do <span class="accent">NOT</span> Collect</h2>
+            <div class="policy-body">
+              <p>To be explicit, HabitForge and Prasannova Solutions do <strong>not</strong>:</p>
+              <ul>
+                <li>Collect analytics, telemetry, or usage statistics.</li>
+                <li>Track which habits you create or how often you use the app.</li>
+                <li>Display ads or share data with advertising networks.</li>
+                <li>Sell, rent, or share your data with third parties for any commercial purpose.</li>
+                <li>Store any data on Prasannova Solutions' own servers or cloud infrastructure.</li>
+                <li>Access your device's contacts, camera, microphone, or location.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 07 -->
+          <div class="policy-section" id="s7">
+            <div class="section-number">07</div>
+            <h2 class="section-heading">Third-Party <span class="accent">Services</span></h2>
+            <div class="policy-body">
+              <p>HabitForge integrates with the following third-party services:</p>
+              <ul>
+                <li><strong>Google Identity (OAuth 2.0)</strong> — for sign-in. Subject to <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</li>
+                <li><strong>Google Drive API</strong> — for optional backup. Subject to <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</li>
+                <li><strong>Microsoft Store</strong> — for distribution. Subject to <a href="https://privacy.microsoft.com" target="_blank">Microsoft's Privacy Statement</a>.</li>
+              </ul>
+              <p>We are not responsible for the privacy practices of these third-party services. We encourage you to review their respective policies.</p>
+            </div>
+          </div>
+
+          <!-- 08 -->
+          <div class="policy-section" id="s8">
+            <div class="section-number">08</div>
+            <h2 class="section-heading">Children's <span class="accent">Privacy</span></h2>
+            <div class="policy-body">
+              <p>HabitForge is not directed at children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has used the app and provided personal data through Google Sign-In, please contact us and we will take appropriate steps.</p>
+            </div>
+          </div>
+
+          <!-- 09 -->
+          <div class="policy-section" id="s9">
+            <div class="section-number">09</div>
+            <h2 class="section-heading">Data <span class="accent">Deletion</span></h2>
+            <div class="policy-body">
+              <p>Because all data is stored locally on your device, you are in complete control of deletion:</p>
+              <ul>
+                <li><strong>In-app deletion</strong> — delete individual habits, entries, categories, or journal entries from within HabitForge at any time.</li>
+                <li><strong>Full local wipe</strong> — delete the folder at <code style="color:var(--forge-amber);">%AppData%\HabitForge\</code> to erase all app data from your machine.</li>
+                <li><strong>Google Drive backup</strong> — delete the backup file directly from your Google Drive.</li>
+                <li><strong>Google account access</strong> — revoke HabitForge's Drive access at <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a> at any time.</li>
+              </ul>
+              <p>Since we hold no data on our end, there is nothing to request deletion of from Prasannova Solutions.</p>
+            </div>
+          </div>
+
+          <!-- 10 -->
+          <div class="policy-section" id="s10">
+            <div class="section-number">10</div>
+            <h2 class="section-heading">Changes to <span class="accent">This Policy</span></h2>
+            <div class="policy-body">
+              <p>We may update this Privacy Policy from time to time. When we do, we will revise the "Last Updated" date at the top of this page and, where appropriate, notify users via the GitHub repository or the app's release notes.</p>
+              <p>Continued use of HabitForge after changes are posted constitutes acceptance of the updated policy.</p>
+            </div>
+          </div>
+
+          <!-- 11 -->
+          <div class="policy-section" id="s11">
+            <div class="section-number">11</div>
+            <h2 class="section-heading">Contact <span class="accent">Us</span></h2>
+            <div class="policy-body">
+              <p>If you have questions about this Privacy Policy or how HabitForge handles your data, reach us through:</p>
+              <ul>
+                <li><strong>GitHub Issues:</strong> <a href="https://github.com/PrasannTheDeveloper/Habit-Forge/issues" target="_blank">github.com/PrasannTheDeveloper/Habit-Forge/issues</a></li>
+                <li><strong>Company:</strong> Prasannova Solutions</li>
+                <li><strong>App:</strong> HabitForge — Track. Build. Transform.</li>
+              </ul>
+              <div class="callout teal">
+                <p>We're a small indie team. We'll do our best to respond promptly and honestly.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="row align-items-center gy-3">
+        <div class="col-lg-4">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <img src="images/Logo3.png" alt="HabitForge icon" style="height:32px;width:auto;" />
+            <h6 >Habit Forge</h6>
+          </div>
+          <div class="hf-tagline-nav">A product of Prasannova Solutions</div>
+        </div>
+        <div class="col-lg-4 d-flex flex-wrap gap-3 justify-content-lg-center">
+          <a href="index.html" class="footer-link">Home</a>
+          <a href="PrivacyPolicy.html" class="footer-link" style="color:var(--forge-orange);">Privacy Policy</a>
+          <a href="TermsOfService.html" class="footer-link">Terms of Service</a>
+          <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="footer-link">GitHub</a>
+        </div>
+        <div class="col-lg-4 d-flex gap-2 justify-content-lg-end">
+          <a href="https://instagram.com" target="_blank" class="social-icon" title="Instagram"><i class="bi bi-instagram"></i></a>
+          <a href="https://linkedin.com" target="_blank" class="social-icon" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          <a href="https://x.com" target="_blank" class="social-icon" title="X"><i class="bi bi-twitter-x"></i></a>
+          <a href="https://ko-fi.com" target="_blank" class="social-icon" title="Ko-fi">☕</a>
+          <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="social-icon" title="GitHub"><i class="bi bi-github"></i></a>
+        </div>
+      </div>
+      <hr style="border-color:var(--forge-border);margin:1.5rem 0;" />
+      <div class="text-center" style="color:var(--forge-muted);font-size:.78rem;font-family:var(--font-cond);letter-spacing:.1em;">
+        © 2026 Prasannova Solutions · HabitForge · Open Source · Windows Only · Free Forever
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

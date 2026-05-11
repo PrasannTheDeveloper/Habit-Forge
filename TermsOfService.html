@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms of Service – HabitForge · Prasannova Solutions</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link href="/staticFiles/styles.css" rel="stylesheet" />
+  <!-- Reuse all styles from privacy-policy.html -->
+  <link href="privacy-policy.html" rel="stylesheet" />
+  <style>
+    /* ── Copy of shared design tokens & classes from privacy-policy.html ── */
+    :root {
+      --forge-black:  #0a0a0f;
+      --forge-dark:   #11111a;
+      --forge-panel:  #181824;
+      --forge-border: #2a2a3a;
+      --forge-orange: #ff6b1a;
+      --forge-amber:  #ffb020;
+      --forge-teal:   #00d4aa;
+      --forge-text:   #e8e8f0;
+      --forge-muted:  #8888a8;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-body:    'Barlow', sans-serif;
+      --font-cond:    'Barlow Condensed', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: var(--forge-black); color: var(--forge-text); font-family: var(--font-body); font-weight: 400; line-height: 1.75; overflow-x: hidden; }
+    a { color: var(--forge-orange); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; }
+    .hf-nav { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; background: rgba(10,10,15,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--forge-border); padding: .75rem 0; }
+    .nav-back { font-family: var(--font-cond); font-size: .85rem; letter-spacing: .14em; text-transform: uppercase; color: var(--forge-muted); display: inline-flex; align-items: center; gap: .4rem; transition: color .2s; text-decoration: none; }
+    .nav-back:hover { color: var(--forge-orange); text-decoration: none; }
+    .policy-hero { padding-top: 110px; padding-bottom: 60px; background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(255,107,26,.08) 0%, transparent 70%), var(--forge-black); border-bottom: 1px solid var(--forge-border); }
+    .policy-eyebrow { font-family: var(--font-cond); font-size: .78rem; letter-spacing: .28em; text-transform: uppercase; color: var(--forge-orange); margin-bottom: .6rem; display: block; }
+    .policy-title { font-family: var(--font-display); font-size: clamp(2.8rem, 6vw, 5rem); line-height: 1; letter-spacing: .04em; }
+    .policy-meta { font-family: var(--font-cond); font-size: .82rem; letter-spacing: .14em; text-transform: uppercase; color: var(--forge-muted); margin-top: 1rem; }
+    .policy-meta span { color: var(--forge-amber); }
+    .policy-wrap { padding: 60px 0 100px; }
+    .toc-sidebar { position: sticky; top: 90px; background: var(--forge-panel); border: 1px solid var(--forge-border); border-radius: 4px; padding: 1.5rem; }
+    .toc-heading { font-family: var(--font-cond); font-size: .72rem; letter-spacing: .24em; text-transform: uppercase; color: var(--forge-muted); margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--forge-border); }
+    .toc-list { list-style: none; padding: 0; margin: 0; }
+    .toc-list li { margin-bottom: .3rem; }
+    .toc-list a { font-family: var(--font-cond); font-size: .88rem; letter-spacing: .06em; color: var(--forge-muted); display: flex; align-items: flex-start; gap: .4rem; transition: color .2s; text-decoration: none; }
+    .toc-list a:hover { color: var(--forge-orange); }
+    .toc-num { color: var(--forge-border); font-size: .75rem; min-width: 18px; padding-top: 1px; }
+    .policy-section { margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid var(--forge-border); }
+    .policy-section:last-child { border-bottom: none; }
+    .section-number { font-family: var(--font-display); font-size: 3rem; color: var(--forge-border); line-height: 1; margin-bottom: -.2rem; }
+    .section-heading { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: .04em; color: var(--forge-text); margin-bottom: 1rem; }
+    .section-heading .accent { color: var(--forge-orange); }
+    .policy-body p { color: #b0b0c8; margin-bottom: .9rem; font-size: .97rem; }
+    .policy-body ul { list-style: none; padding: 0; margin: .5rem 0 1rem; }
+    .policy-body ul li { color: #b0b0c8; font-size: .97rem; padding: .3rem 0 .3rem 1.4rem; position: relative; }
+    .policy-body ul li::before { content: '—'; position: absolute; left: 0; color: var(--forge-orange); font-weight: 700; }
+    .callout { background: var(--forge-panel); border-left: 3px solid var(--forge-orange); border-radius: 0 4px 4px 0; padding: 1rem 1.25rem; margin: 1.25rem 0; }
+    .callout.teal  { border-color: var(--forge-teal); }
+    .callout.amber { border-color: var(--forge-amber); }
+    .callout p { margin: 0; font-size: .92rem; color: var(--forge-muted); }
+    .callout strong { color: var(--forge-text); }
+    .footer { background: var(--forge-dark); border-top: 1px solid var(--forge-border); padding: 2.5rem 0; }
+    .footer-link { font-family: var(--font-cond); font-size: .82rem; letter-spacing: .14em; text-transform: uppercase; color: var(--forge-muted); transition: color .2s; text-decoration: none; }
+    .footer-link:hover { color: var(--forge-orange); }
+    .hf-tagline-nav { font-family: var(--font-cond); font-size: .72rem; letter-spacing: .22em; text-transform: uppercase; color: var(--forge-muted); }
+    .social-icon { width: 36px; height: 36px; border: 1px solid var(--forge-border); border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--forge-muted); transition: all .2s; text-decoration: none; }
+    .social-icon:hover { border-color: var(--forge-orange); color: var(--forge-orange); }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="hf-nav">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-auto">
+                <a href="#hero"
+                   class="d-flex align-items-center gap-2 text-decoration-none">
+
+                    <img src="images/Logo3.png"
+                         alt="HabitForge icon"
+                         style="height: 40px; width: auto;" />
+
+                      <h2 class="m-0" style="color: var(--forge-text);">Habit Forge</h2>
+                </a>
+            </div>
+        <div class="col d-flex justify-content-end">
+          <a href="index.html" class="nav-back">
+            <i class="bi bi-arrow-left"></i> Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO BANNER -->
+  <div class="policy-hero">
+    <div class="container">
+      <span class="policy-eyebrow">Legal · Prasannova Solutions</span>
+      <h1 class="policy-title">TERMS OF<br><span style="color:var(--forge-orange);">SERVICE</span></h1>
+      <div class="policy-meta">
+        Effective Date: <span>May 9, 2026</span> &nbsp;·&nbsp;
+        Last Updated: <span>May 9, 2026</span> &nbsp;·&nbsp;
+        App: <span>HabitForge</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="policy-wrap">
+    <div class="container">
+      <div class="row gx-5 gy-4">
+
+        <!-- SIDEBAR TOC -->
+        <div class="col-lg-3 d-none d-lg-block">
+          <div class="toc-sidebar">
+            <div class="toc-heading">Contents</div>
+            <ul class="toc-list">
+              <li><a href="#t1"><span class="toc-num">01</span>Agreement</a></li>
+              <li><a href="#t2"><span class="toc-num">02</span>Who Can Use HabitForge</a></li>
+              <li><a href="#t3"><span class="toc-num">03</span>License to Use</a></li>
+              <li><a href="#t4"><span class="toc-num">04</span>Open Source</a></li>
+              <li><a href="#t5"><span class="toc-num">05</span>Your Data &amp; Content</a></li>
+              <li><a href="#t6"><span class="toc-num">06</span>Google Services</a></li>
+              <li><a href="#t7"><span class="toc-num">07</span>Acceptable Use</a></li>
+              <li><a href="#t8"><span class="toc-num">08</span>No Warranty</a></li>
+              <li><a href="#t9"><span class="toc-num">09</span>Limitation of Liability</a></li>
+              <li><a href="#t10"><span class="toc-num">10</span>Updates &amp; Availability</a></li>
+              <li><a href="#t11"><span class="toc-num">11</span>Changes to Terms</a></li>
+              <li><a href="#t12"><span class="toc-num">12</span>Contact Us</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="col-lg-9">
+
+          <!-- 01 -->
+          <div class="policy-section" id="t1">
+            <div class="section-number">01</div>
+            <h2 class="section-heading">Agreement</h2>
+            <div class="policy-body">
+  <p>HabitForge's source code is publicly available on GitHub. The project is released under the <strong>MIT License</strong>.</p>
+  <ul>
+    <li>You are free to use, copy, modify, merge, publish, and distribute the software, provided the original copyright notice and permission notice are included in all copies or substantial portions of the software.</li>
+    <li>Contributions submitted via pull requests will be subject to the same MIT License terms.</li>
+  </ul>
+</div>
+          </div>
+
+          <!-- 02 -->
+          <div class="policy-section" id="t2">
+            <div class="section-number">02</div>
+            <h2 class="section-heading">Who Can Use <span class="accent">HabitForge</span></h2>
+            <div class="policy-body">
+              <p>HabitForge is rated <strong>IARC 3+ (Everyone)</strong> in the Microsoft Store, meaning the content is suitable for all ages. However, to comply with digital privacy laws:</p>
+    <ul>
+      <li>Users under the age of 13 must use the application under the supervision of a parent or legal guardian.</li>
+      <li>By using the app, you represent that you meet the minimum age requirements in your jurisdiction or have received parental consent.</li>
+      <li>Prasannova Solutions does not knowingly collect personal data from children without verifiable parental consent.</li>
+    </ul>
+            </div>
+          </div>
+
+          <!-- 03 -->
+          <div class="policy-section" id="t3">
+            <div class="section-number">03</div>
+            <h2 class="section-heading">License <span class="accent">to Use</span></h2>
+            <div class="policy-body">
+              <p>Prasannova Solutions grants you a personal, non-exclusive, non-transferable license to use HabitForge. While the application is free to use, the intellectual property rights remain with the developer except where governed by open-source terms.</p>
+    <div class="callout amber">
+      <p><strong>Developer Note:</strong> This end-user license is intentionally designed to be permissive, matching the spirit of the MIT License (see Section 04).</p>
+    </div>
+            </div>
+          </div>
+
+          <!-- 04 -->
+          <div class="policy-section" id="t4">
+            <div class="section-number">04</div>
+            <h2 class="section-heading">Open <span class="accent">Source & MIT License</span></h2>
+            <div class="policy-body">
+              <p>HabitForge is proud to be open-source software. The source code is publicly available on GitHub at 
+                 <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank">github.com/PrasannTheDeveloper/Habit-Forge</a>.</p>
+              
+              <div class="callout teal">
+                <p><strong>License:</strong> This project is licensed under the <strong>MIT License</strong>. 
+                This means you are free to use, copy, modify, and distribute the software, provided that the original copyright notice and this permission notice are included in all copies.</p>
+              </div>
+
+              <ul>
+                <li>You are welcome to fork, modify, and contribute to the project in accordance with the MIT License terms.</li>
+                <li>Contributions submitted via pull requests will be included at the discretion of Prasannova Solutions and will be subject to the same license.</li>
+                <li>The "HabitForge" name and branding remain the property of Prasannova Solutions.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 05 -->
+          <div class="policy-section" id="t5">
+            <div class="section-number">05</div>
+            <h2 class="section-heading">Your Data <span class="accent">&amp; Content</span></h2>
+            <div class="policy-body">
+              <p>All content you create in HabitForge — habits, journal entries, categories, notes — belongs entirely to you. Prasannova Solutions claims no ownership over your data.</p>
+              <ul>
+                <li>Your data is stored locally on your device in <code style="color:var(--forge-amber);">%AppData%\HabitForge\</code>.</li>
+                <li>If you use Google Drive Backup, your data is uploaded to your own Google account — not to Prasannova Solutions.</li>
+                <li>You are solely responsible for maintaining backups of your data. Prasannova Solutions is not liable for any data loss resulting from device failure, accidental deletion, or application errors.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 06 -->
+          <div class="policy-section" id="t6">
+            <div class="section-number">06</div>
+            <h2 class="section-heading">Google <span class="accent">Services</span></h2>
+            <div class="policy-body">
+              <p>HabitForge integrates with Google Sign-In and Google Drive. Your use of these features is also subject to:</p>
+              <ul>
+                <li><a href="https://policies.google.com/terms" target="_blank">Google Terms of Service</a></li>
+                <li><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></li>
+              </ul>
+              <p>Prasannova Solutions is not affiliated with Google LLC. We are not responsible for any disruption, changes, or discontinuation of Google's services that may affect HabitForge features.</p>
+            </div>
+          </div>
+
+          <!-- 07 -->
+          <div class="policy-section" id="t7">
+            <div class="section-number">07</div>
+            <h2 class="section-heading">Acceptable <span class="accent">Use</span></h2>
+            <div class="policy-body">
+              <p>HabitForge is a personal productivity tool. You agree not to use it in any way that:</p>
+              <ul>
+                <li>Violates any applicable local, national, or international law or regulation.</li>
+                <li>Attempts to reverse-engineer, decompile, or tamper with the application in ways that violate the open-source license.</li>
+                <li>Introduces malicious code, exploits, or vulnerabilities into the application or its distribution channels.</li>
+                <li>Misrepresents the origin or authorship of the application to others.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 08 -->
+          <div class="policy-section" id="t8">
+            <div class="section-number">08</div>
+            <h2 class="section-heading">No <span class="accent">Warranty</span></h2>
+            <div class="policy-body">
+              <p>HabitForge is provided <strong>"as is"</strong> and <strong>"as available"</strong>, without warranty of any kind, express or implied. Prasannova Solutions makes no representations or warranties regarding:</p>
+              <ul>
+                <li>The accuracy, reliability, or completeness of any data tracked or displayed by the app.</li>
+                <li>The uninterrupted or error-free operation of the application.</li>
+                <li>The fitness of HabitForge for any particular purpose or use case.</li>
+              </ul>
+              <div class="callout">
+                <p>We work hard to make HabitForge reliable and useful, but we're a small team and bugs can happen. Please report issues on <a href="https://github.com/PrasannTheDeveloper/Habit-Forge/issues" target="_blank">GitHub</a>.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 09 -->
+          <div class="policy-section" id="t9">
+            <div class="section-number">09</div>
+            <h2 class="section-heading">Limitation of <span class="accent">Liability</span></h2>
+            <div class="policy-body">
+              <p>To the maximum extent permitted by applicable law, Prasannova Solutions and its contributors shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to:</p>
+              <ul>
+                <li>Loss of data, habits, journal entries, or streak records.</li>
+                <li>Loss of productivity or revenue arising from use of, or inability to use, HabitForge.</li>
+                <li>Any damages resulting from third-party service outages (e.g. Google Drive unavailability).</li>
+              </ul>
+              <p>In any case, the total liability of Prasannova Solutions to you for any claim arising out of or related to these Terms shall not exceed the amount you paid for HabitForge — which, since the app is free, is zero.</p>
+            </div>
+          </div>
+
+          <!-- 10 -->
+          <div class="policy-section" id="t10">
+            <div class="section-number">10</div>
+            <h2 class="section-heading">Updates <span class="accent">&amp; Availability</span></h2>
+            <div class="policy-body">
+              <p>Prasannova Solutions may release updates, patches, or new versions of HabitForge at any time. Updates distributed via the Microsoft Store may be applied automatically depending on your system settings.</p>
+              <ul>
+                <li>We reserve the right to modify, suspend, or discontinue HabitForge at any time without prior notice.</li>
+                <li>We are not liable to you or any third party for any modification, suspension, or discontinuation of the app.</li>
+                <li>Since your data is stored locally, discontinuation of the app does not result in loss of your data.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 11 -->
+          <div class="policy-section" id="t11">
+            <div class="section-number">11</div>
+            <h2 class="section-heading">Changes to <span class="accent">These Terms</span></h2>
+            <div class="policy-body">
+              <p>We may update these Terms from time to time. When we do, we will revise the "Last Updated" date at the top of this page and, where appropriate, notify users via the GitHub repository or the app's release notes.</p>
+              <p>Your continued use of HabitForge after any changes constitutes your acceptance of the revised Terms. If you do not agree with the updated Terms, please stop using the application.</p>
+            </div>
+          </div>
+
+          <!-- 12 -->
+          <div class="policy-section" id="t12">
+            <div class="section-number">12</div>
+            <h2 class="section-heading">Contact <span class="accent">Us</span></h2>
+            <div class="policy-body">
+              <p>If you have questions about these Terms, reach us through:</p>
+              <ul>
+                <li><strong>GitHub Issues:</strong> <a href="https://github.com/PrasannTheDeveloper/Habit-Forge/issues" target="_blank">github.com/PrasannTheDeveloper/Habit-Forge/issues</a></li>
+                <li><strong>Company:</strong> Prasannova Solutions</li>
+                <li><strong>Email:</strong> prasanndotnetdeveloper@gmail.com</li>
+                <li><strong>App:</strong> HabitForge — Track. Build. Transform.</li>
+              </ul>
+              <div class="callout teal">
+                <p>We're a small indie team building tools we believe in. We'll always be transparent and fair.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="row align-items-center gy-3">
+        <div class="col-lg-4">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <img src="images/Logo3.png" alt="HabitForge icon" style="height:32px;width:auto;" />
+            <h6>Habit Forge</h6>
+          </div>
+          <div class="hf-tagline-nav">A product of Prasannova Solutions</div>
+        </div>
+        <div class="col-lg-4 d-flex flex-wrap gap-3 justify-content-lg-center">
+          <a href="index.html" class="footer-link">Home</a>
+          <a href="PrivacyPolicy.html" class="footer-link">Privacy Policy</a>
+          <a href="TermsOfService.html" class="footer-link" style="color:var(--forge-orange);">Terms of Service</a>
+          <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="footer-link">GitHub</a>
+        </div>
+        <div class="col-lg-4 d-flex gap-2 justify-content-lg-end">
+          <!-- <a href="https://instagram.com" target="_blank" class="social-icon" title="Instagram"><i class="bi bi-instagram"></i></a>
+          <a href="https://linkedin.com" target="_blank" class="social-icon" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          <a href="https://x.com" target="_blank" class="social-icon" title="X"><i class="bi bi-twitter-x"></i></a> -->
+          <a href="https://ko-fi.com" target="_blank" class="social-icon" title="Ko-fi">☕</a>
+          <a href="https://github.com/PrasannTheDeveloper/Habit-Forge" target="_blank" class="social-icon" title="GitHub"><i class="bi bi-github"></i></a>
+        </div>
+      </div>
+      <hr style="border-color:var(--forge-border);margin:1.5rem 0;" />
+      <div class="text-center" style="color:var(--forge-muted);font-size:.78rem;font-family:var(--font-cond);letter-spacing:.1em;">
+        © 2026 Prasannova Solutions · HabitForge · Open Source · Windows Only · Free Forever
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
